@@ -26,7 +26,7 @@ Leia antes da resposta final:
 - `references/playbook-candidatos.md`: como descobrir e qualificar candidatos sem aprovar falso mapping.
 - `references/contrato-saida.md`: envelope JSON final esperado.
 
-Leia `references/itens-nao-confrontaveis.md` quando o dossie trouxer instrucoes operacionais, PRM, CRM, comunicacao, migracao ou status. Leia `references/exemplo-vivo-recado.md` quando o alvo parecer Vivo Recado.
+Leia `references/itens-nao-confrontaveis.md` quando o dossie trouxer instrucoes operacionais, PRM, CRM, comunicacao, migracao ou status.
 
 ## Fluxo Obrigatorio
 

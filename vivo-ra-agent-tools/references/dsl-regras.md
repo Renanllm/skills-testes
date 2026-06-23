@@ -18,9 +18,9 @@ Quando o dossie nao for claro, use a data efetiva/competencia da linha como prem
 {
   "ruleName": "Nome humano da regra",
   "ruleType": "free_period | fixed_price | discount | exclusion | migration_price | other_monetary",
-  "dossierCode": "20131",
+  "dossierCode": "00000",
   "target": {
-    "entityName": "Vivo Recado",
+    "entityName": "Produto Exemplo",
     "entityKind": "product | variant | bundle | plan | offer | unknown",
     "entityIds": [],
     "affectedScope": "single_charge_line | product | bundle | plan | account | unknown"
@@ -31,7 +31,7 @@ Quando o dossie nao for claro, use a data efetiva/competencia da linha como prem
     "amountField": "c.chargetotalamount"
   },
   "predicate": {
-    "chargecodeKeyIn": ["RMVIVORECADM"],
+    "chargecodeKeyIn": ["RMEXEMPLO001"],
     "productcatalogKeyIn": [],
     "bundleOfferCaptionIn": [],
     "descriptionContains": "somente recall"
@@ -48,7 +48,7 @@ Quando o dossie nao for claro, use a data efetiva/competencia da linha como prem
   },
   "evidence": [
     {
-      "source": "20131.pdf",
+      "source": "00000.pdf",
       "page": 1,
       "quote": "trecho curto",
       "rationale": "por que esse trecho sustenta a regra"

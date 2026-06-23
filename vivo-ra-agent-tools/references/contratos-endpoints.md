@@ -22,10 +22,10 @@ Formato comum:
 ```json
 {
   "invoiceKeys": ["3332859950_358710428"],
-  "chargecodeKeyIn": ["RMVIVORECADM"],
-  "productcatalogKeyIn": ["1125259208"],
-  "bundleOfferCaptionIn": ["Servico Digital 9 TBF"],
-  "descriptionContains": "Vivo Recado",
+  "chargecodeKeyIn": ["RMEXEMPLO001"],
+  "productcatalogKeyIn": ["1234567890"],
+  "bundleOfferCaptionIn": ["Bundle Exemplo"],
+  "descriptionContains": "Produto Exemplo",
   "minAmount": 0,
   "maxAmount": 10
 }
@@ -45,7 +45,7 @@ Payload tipico:
 
 ```json
 {
-  "query": "Vivo Recado",
+  "query": "Produto Exemplo",
   "entityKinds": ["product", "variant", "bundle", "plan", "offer"],
   "limit": 20,
   "offset": 0
@@ -64,7 +64,7 @@ Payload:
 
 ```json
 {
-  "query": "Vivo Recado",
+  "query": "Produto Exemplo",
   "identifierKinds": ["chargecode_key", "productcatalog_key", "bundle_offer_caption"],
   "onlyChargecodeProduct1to1": true,
   "limit": 20
@@ -79,10 +79,10 @@ Payload:
 
 ```json
 {
-  "query": "Vivo Recado",
-  "productcatalogKeys": ["1125259208"],
-  "bundleOfferCaptions": ["Servico Digital 9 TBF"],
-  "chargecodeKeys": ["RMVIVORECADM"],
+  "query": "Produto Exemplo",
+  "productcatalogKeys": ["1234567890"],
+  "bundleOfferCaptions": ["Bundle Exemplo"],
+  "chargecodeKeys": ["RMEXEMPLO001"],
   "limit": 20
 }
 ```
@@ -95,7 +95,7 @@ Payload:
 
 ```json
 {
-  "targetName": "Vivo Recado",
+  "targetName": "Produto Exemplo",
   "entityKinds": ["product"],
   "strategy": "high_recall",
   "limit": 20
@@ -118,7 +118,7 @@ Payload:
 ```json
 {
   "predicate": {
-    "chargecodeKeyIn": ["RMVIVORECADM", "RMVIVORECADVT"]
+    "chargecodeKeyIn": ["RMEXEMPLO001", "RMEXEMPLO002"]
   },
   "groupBy": ["chargecode_key", "productcatalog_key", "bundle_offer_caption"],
   "limit": 30
@@ -134,7 +134,7 @@ Payload:
 ```json
 {
   "predicate": {
-    "chargecodeKeyIn": ["RMVIVORECADM"]
+    "chargecodeKeyIn": ["RMEXEMPLO001"]
   },
   "limit": 20,
   "offset": 0
@@ -150,12 +150,12 @@ Payload:
 ```json
 {
   "finalPredicate": {
-    "chargecodeKeyIn": ["RMVIVORECADM", "RMVIVORECADVT"]
+    "chargecodeKeyIn": ["RMEXEMPLO001", "RMEXEMPLO002"]
   },
   "candidateQualification": {
-    "includeCandidateSetIds": ["cand-chargecode-RMVIVORECADM"],
-    "excludeCandidateSetIds": ["cand-description-vivo-recado"],
-    "rationale": "Charge codes diretos representam Vivo Recado; busca por descricao e ampla demais."
+    "includeCandidateSetIds": ["cand-chargecode-RMEXEMPLO001"],
+    "excludeCandidateSetIds": ["cand-description-produto-exemplo"],
+    "rationale": "Charge codes diretos representam Produto Exemplo; busca por descricao e ampla demais."
   }
 }
 ```
@@ -168,9 +168,9 @@ Payload tipico:
 
 ```json
 {
-  "dossierCode": "20131",
+  "dossierCode": "00000",
   "target": {
-    "entityName": "Vivo Recado",
+    "entityName": "Produto Exemplo",
     "entityKind": "product"
   },
   "limit": 20,
@@ -187,11 +187,11 @@ Payload obrigatorio: a regra deve ir dentro de `ruleDraft`.
 ```json
 {
   "ruleDraft": {
-    "ruleName": "Vivo Recado gratuito - sem cobranca",
+    "ruleName": "Produto Exemplo gratuito - sem cobranca",
     "ruleType": "fixed_price",
-    "dossierCode": "20131",
+    "dossierCode": "00000",
     "target": {
-      "entityName": "Vivo Recado",
+      "entityName": "Produto Exemplo",
       "entityKind": "product",
       "affectedScope": "single_charge_line"
     },
@@ -201,7 +201,7 @@ Payload obrigatorio: a regra deve ir dentro de `ruleDraft`.
       "amountField": "c.chargetotalamount"
     },
     "predicate": {
-      "chargecodeKeyIn": ["RMVIVORECADM", "RMVIVORECADVT"]
+      "chargecodeKeyIn": ["RMEXEMPLO001", "RMEXEMPLO002"]
     },
     "expected": {
       "kind": "free",
@@ -210,9 +210,9 @@ Payload obrigatorio: a regra deve ir dentro de `ruleDraft`.
     },
     "evidence": [
       {
-        "source": "20131.pdf",
+        "source": "00000.pdf",
         "page": 1,
-        "quote": "Vivo Recado passara a ser gratuito",
+        "quote": "Produto Exemplo passara a ser gratuito",
         "rationale": "Evidencia a gratuidade do servico."
       }
     ],
@@ -230,16 +230,16 @@ Payload obrigatorio: a regra deve ir dentro de `ruleDraft`.
 ```json
 {
   "ruleDraft": {
-    "ruleName": "Vivo Recado gratuito - sem cobranca",
+    "ruleName": "Produto Exemplo gratuito - sem cobranca",
     "ruleType": "fixed_price",
-    "dossierCode": "20131",
+    "dossierCode": "00000",
     "target": {
-      "entityName": "Vivo Recado",
+      "entityName": "Produto Exemplo",
       "entityKind": "product",
       "affectedScope": "single_charge_line"
     },
     "predicate": {
-      "chargecodeKeyIn": ["RMVIVORECADM", "RMVIVORECADVT"]
+      "chargecodeKeyIn": ["RMEXEMPLO001", "RMEXEMPLO002"]
     },
     "expected": {
       "kind": "free",

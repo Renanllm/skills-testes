@@ -4,7 +4,7 @@ A descoberta deve priorizar recall. A qualificacao decide o que entra, sai ou fi
 
 ## Descoberta
 
-1. Comece pelo nome comercial do alvo, por exemplo `Vivo Recado`.
+1. Comece pelo nome comercial do alvo, por exemplo `Produto Exemplo`.
 2. Pesquise catalogo com `product`, `variant`, `bundle`, `plan`, `offer`.
 3. Chame candidate discovery com `strategy: "high_recall"`.
 4. Analise buckets nesta ordem:
@@ -17,14 +17,7 @@ A descoberta deve priorizar recall. A qualificacao decide o que entra, sai ou fi
 
 ### `directIdentifierMatches`
 
-Melhor sinal. Charge codes ou identificadores que batem diretamente com tokens do alvo.
-
-Para Vivo Recado, os candidatos esperados para POC sao:
-
-- `RMVIVORECADM`
-- `RMVIVORECADVT`
-
-Ainda assim, valide cobertura e amostras.
+Melhor sinal. Charge codes ou identificadores que batem diretamente com tokens do alvo. Ainda assim, valide cobertura e amostras antes de propor o predicado final.
 
 ### `lineIdentityCandidates`
 
@@ -52,7 +45,7 @@ O predicado final de regra monetaria deve preferir:
 
 ```json
 {
-  "chargecodeKeyIn": ["RMVIVORECADM", "RMVIVORECADVT"]
+  "chargecodeKeyIn": ["RMEXEMPLO001", "RMEXEMPLO002"]
 }
 ```
 

@@ -8,9 +8,9 @@ Nao crie arquivo para a resposta final. Nao use `Write`, nao salve `/home/user/r
 {
   "status": "draft | needs_mapping | needs_agent_audit | needs_review | blocked | completed",
   "dossier": {
-    "fileName": "20131.pdf",
-    "dossierCode": "20131",
-    "title": "Vivo Recado - Gratuito"
+    "fileName": "00000.pdf",
+    "dossierCode": "00000",
+    "title": "Produto Exemplo - Gratuito"
   },
   "summary": {
     "financialRuleCount": 1,
@@ -51,7 +51,7 @@ Nao crie arquivo para a resposta final. Nao use `Write`, nao salve `/home/user/r
   "toolTrace": [
     {
       "tool": "POST /agent-tools/billing/candidate-discovery",
-      "purpose": "Encontrar candidatos amplos para Vivo Recado",
+      "purpose": "Encontrar candidatos amplos para Produto Exemplo",
       "resultSummary": "Resumo em portugues brasileiro."
     }
   ],
