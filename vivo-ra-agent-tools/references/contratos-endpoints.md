@@ -164,13 +164,91 @@ Use antes de retornar predicado final.
 
 ### `POST /agent-tools/rules/existing`
 
+Payload tipico:
+
+```json
+{
+  "dossierCode": "20131",
+  "target": {
+    "entityName": "Vivo Recado",
+    "entityKind": "product"
+  },
+  "limit": 20,
+  "offset": 0
+}
+```
+
 Lista regras existentes por dossie, alvo ou status.
 
 ### `POST /agent-tools/rules/validate`
 
-Valida formato da regra sem persistir.
+Payload obrigatorio: a regra deve ir dentro de `ruleDraft`.
+
+```json
+{
+  "ruleDraft": {
+    "ruleName": "Vivo Recado gratuito - sem cobranca",
+    "ruleType": "fixed_price",
+    "dossierCode": "20131",
+    "target": {
+      "entityName": "Vivo Recado",
+      "entityKind": "product",
+      "affectedScope": "single_charge_line"
+    },
+    "financialImpact": {
+      "monetary": true,
+      "impactKind": "validation_only",
+      "amountField": "c.chargetotalamount"
+    },
+    "predicate": {
+      "chargecodeKeyIn": ["RMVIVORECADM", "RMVIVORECADVT"]
+    },
+    "expected": {
+      "kind": "free",
+      "amount": 0,
+      "amountField": "c.chargetotalamount"
+    },
+    "evidence": [
+      {
+        "source": "20131.pdf",
+        "page": 1,
+        "quote": "Vivo Recado passara a ser gratuito",
+        "rationale": "Evidencia a gratuidade do servico."
+      }
+    ],
+    "confidence": 0.8
+  }
+}
+```
+
+Valida formato da regra sem persistir. Nao envie `{ "rule": ... }`; isso retorna erro 422.
 
 ### `POST /agent-tools/rules/conflicts`
+
+Payload obrigatorio: a regra deve ir dentro de `ruleDraft`.
+
+```json
+{
+  "ruleDraft": {
+    "ruleName": "Vivo Recado gratuito - sem cobranca",
+    "ruleType": "fixed_price",
+    "dossierCode": "20131",
+    "target": {
+      "entityName": "Vivo Recado",
+      "entityKind": "product",
+      "affectedScope": "single_charge_line"
+    },
+    "predicate": {
+      "chargecodeKeyIn": ["RMVIVORECADM", "RMVIVORECADVT"]
+    },
+    "expected": {
+      "kind": "free",
+      "amount": 0,
+      "amountField": "c.chargetotalamount"
+    }
+  }
+}
+```
 
 Busca possiveis conflitos com regras existentes.
 

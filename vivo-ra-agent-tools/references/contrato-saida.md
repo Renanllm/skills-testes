@@ -2,6 +2,8 @@
 
 Retorne um unico objeto JSON. Nao inclua prosa fora do JSON.
 
+Nao crie arquivo para a resposta final. Nao use `Write`, nao salve `/home/user/result.json` e nao devolva anexo. O objeto deve ser a resposta final do step para que o workflow capture o output format estruturado.
+
 ```json
 {
   "status": "draft | needs_mapping | needs_agent_audit | needs_review | blocked | completed",

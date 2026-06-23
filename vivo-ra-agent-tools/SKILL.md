@@ -58,4 +58,4 @@ Leia `references/itens-nao-confrontaveis.md` quando o dossie trouxer instrucoes 
 
 ## Saida
 
-Retorne somente um objeto JSON. Inclua evidencias, candidatos, qualificacao, validacoes, conflitos, trace de ferramentas e perguntas abertas. Se uma tool falhar, retorne `status: "blocked"` ou `needs_agent_audit` com a falha, sem inventar mapping.
+Retorne somente um objeto JSON como resposta final do step. Nao crie arquivo, nao use `Write` para salvar `result.json` e nao coloque o resultado final em anexo. Inclua evidencias, candidatos, qualificacao, validacoes, conflitos, trace de ferramentas e perguntas abertas. Se uma tool falhar, retorne `status: "blocked"` ou `needs_agent_audit` com a falha, sem inventar mapping.
