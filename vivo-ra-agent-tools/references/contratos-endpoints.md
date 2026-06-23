@@ -95,21 +95,34 @@ Payload:
 
 ```json
 {
-  "targetName": "Produto Exemplo",
+  "ruleDraft": {
+    "ruleName": "Produto Exemplo - preco esperado",
+    "target": {
+      "entityName": "Produto Exemplo Variante",
+      "entityKind": "variant",
+      "affectedScope": "single_charge_line"
+    },
+    "expected": {
+      "kind": "fixed_amount",
+      "amount": 40.9,
+      "amountField": "c.chargetotalamount"
+    }
+  },
   "entityKinds": ["product"],
   "strategy": "high_recall",
   "limit": 20
 }
 ```
 
-Retorna `candidateSets` e buckets:
+Retorna `targetSearchTerms`, `billingSearchTerms`, `derivedRuleTargets`, `candidateSets` e buckets:
 
 - `directIdentifierMatches`
+- `expectedAmountCandidates`
 - `lineIdentityCandidates`
 - `bundleNeighborCandidates`
 - `semanticDescriptionCandidates`
 
-Essa busca erra para mais. A precisao vem na qualificacao.
+Cada candidato pode trazer `matchedOn`, `positiveSignals`, `negativeSignals` e `recommendedDecision`. Essa busca erra para mais. A precisao vem na qualificacao.
 
 ### `POST /agent-tools/billing/candidate-clusters`
 
@@ -118,7 +131,8 @@ Payload:
 ```json
 {
   "predicate": {
-    "chargecodeKeyIn": ["RMEXEMPLO001", "RMEXEMPLO002"]
+    "chargecodeKeyIn": ["RMEXEMPLO001", "RMEXEMPLO002"],
+    "descriptionContainsAny": ["Produto Exemplo", "EXEMPLO"]
   },
   "groupBy": ["chargecode_key", "productcatalog_key", "bundle_offer_caption"],
   "limit": 30

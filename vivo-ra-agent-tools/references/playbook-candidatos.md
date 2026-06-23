@@ -6,12 +6,15 @@ A descoberta deve priorizar recall. A qualificacao decide o que entra, sai ou fi
 
 1. Comece pelo nome comercial do alvo, por exemplo `Produto Exemplo`.
 2. Pesquise catalogo com `product`, `variant`, `bundle`, `plan`, `offer`.
-3. Chame candidate discovery com `strategy: "high_recall"`.
+3. Chame candidate discovery com `strategy: "high_recall"` e envie o `ruleDraft` completo, incluindo `target` e `expected.amount` quando existir.
 4. Analise buckets nesta ordem:
    1. `directIdentifierMatches`
-   2. `lineIdentityCandidates`
-   3. `bundleNeighborCandidates`
-   4. `semanticDescriptionCandidates`
+   2. `expectedAmountCandidates`
+   3. `lineIdentityCandidates`
+   4. `bundleNeighborCandidates`
+   5. `semanticDescriptionCandidates`
+
+Use `targetSearchTerms` para entender a decomposicao comercial do alvo e `billingSearchTerms` para entender quais termos foram usados nas buscas de fatura. Quando o dossie trouxer uma variante comercial, como plano/tier/familia/premium/standard, confira `derivedRuleTargets`.
 
 ## Significado dos Buckets
 
@@ -24,6 +27,10 @@ Melhor sinal. Charge codes ou identificadores que batem diretamente com tokens d
 Contexto composto de `productcatalog_key`, `productcatalog_description`, `bundle_offer_caption` e `chargecode_key`.
 
 Use para entender linhas em que o produto so fica claro pela combinacao.
+
+### `expectedAmountCandidates`
+
+Sinal de recall para regras com valor fixo, gratuidade ou desconto. Combina valor esperado com termos amplos do produto base. Nao use sozinho como predicado final, mas nunca ignore quando houver linhas.
 
 ### `bundleNeighborCandidates`
 
@@ -40,6 +47,8 @@ Para cada candidato, decida:
 - `include`: contexto e evidencia sustentam que a linha e afetada pela regra.
 - `exclude`: vizinho, match amplo, produto diferente, item operacional ou escopo errado.
 - `pending`: pode ser relacionado, mas falta evidencia/mapping.
+
+Use os campos `positiveSignals`, `negativeSignals`, `matchedOn` e `recommendedDecision` como entrada da decisao. Se `recommendedDecision` vier `include` ou `pending`, revise `sample-lines` ou `candidate-clusters` antes de excluir.
 
 O predicado final de regra monetaria deve preferir:
 
