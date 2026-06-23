@@ -114,10 +114,11 @@ Payload:
 }
 ```
 
+`expected.amount` pode ser enviado porque faz parte do rascunho da regra, mas o endpoint nao deve usa-lo para descobrir candidatos. Candidatos devem vir de descricao de produto, contexto de bundle, `productcatalog_description`, chargecode inferido e identidades de linha.
+
 Retorna `targetSearchTerms`, `billingSearchTerms`, `derivedRuleTargets`, `candidateSets` e buckets:
 
 - `directIdentifierMatches`
-- `expectedAmountCandidates`
 - `lineIdentityCandidates`
 - `bundleNeighborCandidates`
 - `semanticDescriptionCandidates`

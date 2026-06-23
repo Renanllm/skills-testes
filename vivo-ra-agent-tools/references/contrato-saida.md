@@ -69,7 +69,7 @@ Cada item de `regras_financeiras[].candidate_sets_resumo[]` deve preservar o con
   "decisao": "include | exclude | pending",
   "motivo": "Racional curto em portugues brasileiro.",
   "billing_context": {
-    "candidate_set_kind": "chargecode_key | billing_line_identity | expected_amount_window | semantic_description_match",
+    "candidate_set_kind": "chargecode_key | billing_line_identity | semantic_description_match | bundle_neighbor",
     "predicate": {
       "chargecodeKeyIn": ["RMEXEMPLO001"]
     },
@@ -88,8 +88,7 @@ Cada item de `regras_financeiras[].candidate_sets_resumo[]` deve preservar o con
     "matched_on": {
       "chargecodeKey": true,
       "productcatalogDescription": true,
-      "bundleOfferCaption": false,
-      "expectedAmount": false
+      "bundleOfferCaption": false
     },
     "recommended_decision": "include",
     "source_tools": [
@@ -102,7 +101,7 @@ Cada item de `regras_financeiras[].candidate_sets_resumo[]` deve preservar o con
 }
 ```
 
-Campos que nao existirem nas tools podem ser arrays vazios ou `null`, mas o objeto `billing_context` deve existir em todos os candidatos. Para candidatos por valor esperado, preencha `predicate`, contagens, valores e `source_tools`; para candidatos sem linha encontrada, use contagens `0` e explique em `observacoes`.
+Campos que nao existirem nas tools podem ser arrays vazios ou `null`, mas o objeto `billing_context` deve existir em todos os candidatos. Nao crie candidatos por valor esperado ou janela de preco. Para candidatos sem linha encontrada por descricao/chargecode, use contagens `0` e explique em `observacoes`.
 
 ## Checklist Final
 

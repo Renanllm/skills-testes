@@ -7,12 +7,13 @@ A descoberta deve priorizar recall. A qualificacao decide o que entra, sai ou fi
 1. Comece pelo nome comercial do alvo, por exemplo `Produto Exemplo`.
 2. Pesquise catalogo com `product`, `variant`, `bundle`, `plan`, `offer`.
 3. Chame candidate discovery com `strategy: "high_recall"` e envie o `ruleDraft` completo, incluindo `target` e `expected.amount` quando existir.
-4. Analise buckets nesta ordem:
+4. Para escolher candidatos, use somente descricao de produto, contexto de bundle, `productcatalog_description`, `billingSearchTerms`, `lineIdentityCandidates` e chargecode inferido.
+5. Nao use preco alvo, valor faturado, `expected.amount`, `net_amount` ou janela de valor como criterio de descoberta. Esses campos podem existir como contexto ou regra esperada, mas nao devem determinar quais linhas sao candidatas.
+6. Analise buckets nesta ordem:
    1. `directIdentifierMatches`
-   2. `expectedAmountCandidates`
-   3. `lineIdentityCandidates`
-   4. `bundleNeighborCandidates`
-   5. `semanticDescriptionCandidates`
+   2. `lineIdentityCandidates`
+   3. `bundleNeighborCandidates`
+   4. `semanticDescriptionCandidates`
 
 Use `targetSearchTerms` para entender a decomposicao comercial do alvo e `billingSearchTerms` para entender quais termos foram usados nas buscas de fatura. Quando o dossie trouxer uma variante comercial, como plano/tier/familia/premium/standard, confira `derivedRuleTargets`.
 
@@ -27,10 +28,6 @@ Melhor sinal. Charge codes ou identificadores que batem diretamente com tokens d
 Contexto composto de `productcatalog_key`, `productcatalog_description`, `bundle_offer_caption` e `chargecode_key`.
 
 Use para entender linhas em que o produto so fica claro pela combinacao.
-
-### `expectedAmountCandidates`
-
-Sinal de recall para regras com valor fixo, gratuidade ou desconto. Combina valor esperado com termos amplos do produto base. Nao use sozinho como predicado final, mas nunca ignore quando houver linhas.
 
 ### `bundleNeighborCandidates`
 

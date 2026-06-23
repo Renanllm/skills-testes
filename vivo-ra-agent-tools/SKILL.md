@@ -36,7 +36,7 @@ Leia `references/itens-nao-confrontaveis.md` quando o dossie trouxer instrucoes 
 4. Para cada regra monetaria, pesquise o alvo em `POST /agent-tools/catalog/search`.
 5. Crie um rascunho de regra com alvo, comportamento esperado, vigencia, evidencia e incertezas. Para preco fixo, desconto ou gratuidade, preencha `expected.amount`.
 6. Para cada regra monetaria, chame `POST /agent-tools/billing/candidate-discovery` com `strategy: "high_recall"` e envie o `ruleDraft` completo, nao apenas `targetName`.
-7. Analise `targetSearchTerms`, `billingSearchTerms`, `derivedRuleTargets`, `candidateSets`, `positiveSignals`, `negativeSignals` e `recommendedDecision`. Para regra de preco fixo, sempre revise `expectedAmountCandidates`.
+7. Analise `targetSearchTerms`, `billingSearchTerms`, `derivedRuleTargets`, `candidateSets`, `positiveSignals`, `negativeSignals` e `recommendedDecision`. Use apenas descricao de produto, contexto de bundle e chargecode inferido para escolher candidatos; nao use preco/valor faturado como criterio de descoberta.
 8. Para candidatos amplos, ambiguos, `pending` ou `include`, chame `POST /agent-tools/billing/candidate-clusters` e `POST /agent-tools/invoices/sample-lines`.
 9. Use `POST /agent-tools/billing/identifier-search` e `POST /agent-tools/billing/line-identity-search` quando precisar entender relacao entre produto, bundle, descricao e charge code.
 10. Produza `candidateQualification` separando incluidos, excluidos e pendentes. Para cada candidato em `candidate_sets_resumo`, preencha `billing_context` com charge codes, productcatalog keys, productcatalog descriptions, bundle captions, amostras, sinais e tools usadas.
@@ -53,7 +53,8 @@ Leia `references/itens-nao-confrontaveis.md` quando o dossie trouxer instrucoes 
 - Nao transforme item operacional em regra financeira.
 - Nao use nome do produto, descricao ampla ou bundle como unico predicado final de regra monetaria.
 - Nao exclua candidato com `recommendedDecision: "include"` ou `"pending"` sem antes revisar amostras ou clusters.
-- Nao conclua que uma variante nao existe so porque o nome completo da variante nao aparece em `productcatalog_description`; use `derivedRuleTargets`, `billingSearchTerms` e `expectedAmountCandidates`.
+- Nao conclua que uma variante nao existe so porque o nome completo da variante nao aparece em `productcatalog_description`; use `derivedRuleTargets`, `billingSearchTerms`, `lineIdentityCandidates`, clusters e amostras.
+- Nao use `expected.amount`, preco alvo, valor faturado ou janela de valor para escolher candidatos. Esses valores servem para definir a regra/auditoria depois que as linhas candidatas ja foram encontradas por descricao/chargecode.
 - Nao retorne candidato ponderado sem `billing_context` estruturado. A decisao do agente precisa carregar o contexto de fatura usado para include/exclude/pending.
 - Para regra monetaria de linha de fatura, resolva o predicado final para `chargecodeKeyIn` sempre que possivel.
 - Se nao houver identificador executavel, marque `needs_mapping` ou `needs_agent_audit`.
