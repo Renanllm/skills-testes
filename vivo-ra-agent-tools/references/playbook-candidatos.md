@@ -50,6 +50,28 @@ Para cada candidato, decida:
 
 Use os campos `positiveSignals`, `negativeSignals`, `matchedOn` e `recommendedDecision` como entrada da decisao. Se `recommendedDecision` vier `include` ou `pending`, revise `sample-lines` ou `candidate-clusters` antes de excluir.
 
+## Contexto de Billing por Candidato
+
+Para cada candidato retornado em `candidate_sets_resumo`, preserve o contexto de billing usado na decisao dentro de `billing_context`.
+
+O `billing_context` deve consolidar, quando disponivel:
+
+- `candidate_set_kind`;
+- `predicate` usado para localizar linhas;
+- `chargecode_keys`;
+- `productcatalog_keys`;
+- `productcatalog_descriptions`;
+- `bundle_offer_captions`;
+- `billing_line_identity_ids`;
+- `sample_invoice_line_ids`;
+- `line_count`, `invoice_count`, `customer_count` e `net_amount`;
+- `positive_signals`, `negative_signals`, `matched_on` e `recommended_decision`;
+- `source_tools`, indicando quais tools sustentam o contexto.
+
+Use `candidate-discovery` como fonte inicial. Use `candidate-clusters` para preencher combinacoes de charge code, productcatalog, bundle e descricoes. Use `sample-lines` para guardar exemplos concretos de linhas vistas. Use `line-identity-search` quando a linha so fizer sentido pela combinacao `bundle + productcatalog_description + chargecode_key`.
+
+Nao resuma esse contexto apenas no texto do `motivo`; ele precisa estar estruturado para persistencia e exibicao na UI.
+
 O predicado final de regra monetaria deve preferir:
 
 ```json

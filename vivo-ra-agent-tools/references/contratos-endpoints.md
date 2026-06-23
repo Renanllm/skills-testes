@@ -124,6 +124,8 @@ Retorna `targetSearchTerms`, `billingSearchTerms`, `derivedRuleTargets`, `candid
 
 Cada candidato pode trazer `matchedOn`, `positiveSignals`, `negativeSignals` e `recommendedDecision`. Essa busca erra para mais. A precisao vem na qualificacao.
 
+Ao montar `candidate_sets_resumo[].billing_context`, copie de cada candidato tudo que estiver disponivel: `candidateSetKind`, `predicate`, `lineCount`, `invoiceCount`, `netAmount`, `matchedOn`, `positiveSignals`, `negativeSignals`, `recommendedDecision` e `risk`.
+
 ### `POST /agent-tools/billing/candidate-clusters`
 
 Payload:
@@ -141,6 +143,8 @@ Payload:
 
 Use para ver contagens, clientes, faturas e valores por agrupamento.
 
+Use os clusters para preencher `billing_context.productcatalog_keys`, `billing_context.productcatalog_descriptions`, `billing_context.bundle_offer_captions`, `billing_context.chargecode_keys`, `billing_context.line_count`, `billing_context.invoice_count`, `billing_context.customer_count` e `billing_context.net_amount`.
+
 ### `POST /agent-tools/invoices/sample-lines`
 
 Payload:
@@ -156,6 +160,8 @@ Payload:
 ```
 
 Use para revisar exemplos de linhas sem ler a base inteira.
+
+Use as amostras para preencher `billing_context.sample_invoice_line_ids` e para confirmar as descricoes/bundles que sustentam a decisao do candidato.
 
 ### `POST /agent-tools/billing/qualification-validate`
 

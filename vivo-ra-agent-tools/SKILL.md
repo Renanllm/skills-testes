@@ -39,7 +39,7 @@ Leia `references/itens-nao-confrontaveis.md` quando o dossie trouxer instrucoes 
 7. Analise `targetSearchTerms`, `billingSearchTerms`, `derivedRuleTargets`, `candidateSets`, `positiveSignals`, `negativeSignals` e `recommendedDecision`. Para regra de preco fixo, sempre revise `expectedAmountCandidates`.
 8. Para candidatos amplos, ambiguos, `pending` ou `include`, chame `POST /agent-tools/billing/candidate-clusters` e `POST /agent-tools/invoices/sample-lines`.
 9. Use `POST /agent-tools/billing/identifier-search` e `POST /agent-tools/billing/line-identity-search` quando precisar entender relacao entre produto, bundle, descricao e charge code.
-10. Produza `candidateQualification` separando incluidos, excluidos e pendentes.
+10. Produza `candidateQualification` separando incluidos, excluidos e pendentes. Para cada candidato em `candidate_sets_resumo`, preencha `billing_context` com charge codes, productcatalog keys, productcatalog descriptions, bundle captions, amostras, sinais e tools usadas.
 11. Chame `POST /agent-tools/billing/qualification-validate` com o predicado final proposto.
 12. Chame `POST /agent-tools/rules/existing`, `POST /agent-tools/rules/validate` e `POST /agent-tools/rules/conflicts`.
 13. Nao calcule impacto financeiro final na base inteira. No maximo use `POST /agent-tools/audit/preview` para pequena amostra.
@@ -54,6 +54,7 @@ Leia `references/itens-nao-confrontaveis.md` quando o dossie trouxer instrucoes 
 - Nao use nome do produto, descricao ampla ou bundle como unico predicado final de regra monetaria.
 - Nao exclua candidato com `recommendedDecision: "include"` ou `"pending"` sem antes revisar amostras ou clusters.
 - Nao conclua que uma variante nao existe so porque o nome completo da variante nao aparece em `productcatalog_description`; use `derivedRuleTargets`, `billingSearchTerms` e `expectedAmountCandidates`.
+- Nao retorne candidato ponderado sem `billing_context` estruturado. A decisao do agente precisa carregar o contexto de fatura usado para include/exclude/pending.
 - Para regra monetaria de linha de fatura, resolva o predicado final para `chargecodeKeyIn` sempre que possivel.
 - Se nao houver identificador executavel, marque `needs_mapping` ou `needs_agent_audit`.
 - Se a regra fala de bundle, identifique quais linhas de cobranca sao afetadas. Bundle nao significa automaticamente todas as linhas do bundle.
