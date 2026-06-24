@@ -38,7 +38,14 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
             "calculation_json": "{\"kind\":\"no_charge\",\"amountField\":\"charge_total_amount\"}",
             "support_json": "{\"confrontabilityStatus\":\"confrontable_deterministic\",\"unsupportedReasons\":[]}",
             "predicado_final_json": "{\"chargecodeKeyIn\":[\"RMVIVORECADM\"]}",
-            "candidate_sets_resumo": [],
+            "candidate_sets_resumo": [
+                {
+                    "candidate_set_id": "cand-chargecode-RMEXAMPLE001",
+                    "decisao": "include | exclude | pending",
+                    "motivo": "Racional curto em portugues.",
+                    "billing_context_json": "{\"chargecode_keys\":[\"RMEXAMPLE001\"],\"productcatalog_descriptions\":[\"Example Product\"]}"
+                }
+            ],
             "validacao_resumo": "",
             "conflitos_resumo": "",
             "evidencias": [],
@@ -81,11 +88,56 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
 
 Todo item em `candidate_sets_resumo` deve preservar o contexto de billing que o agente usou para decidir. Nao retorne apenas id, decisao e motivo.
 
+O formato preferencial para o workflow e `billing_context_json` como string JSON serializada. Se uma versao futura do workflow aceitar objeto profundo, o mesmo conteudo pode aparecer como `billing_context`.
+
 ```json
 {
     "candidate_set_id": "cand-chargecode-RMEXAMPLE001",
     "decisao": "include | exclude | pending",
     "motivo": "Racional curto em portugues.",
+    "billing_context_json": "{\"candidate_set_kind\":\"chargecode_key\",\"predicate\":{\"chargecodeKeyIn\":[\"RMEXAMPLE001\"]},\"chargecode_keys\":[\"RMEXAMPLE001\"],\"productcatalog_keys\":[\"1234567890\"],\"productcatalog_descriptions\":[\"Example Product\"],\"bundle_offer_captions\":[\"EXAMPLE BUNDLE\"],\"line_count\":10,\"invoice_count\":8,\"customer_count\":8,\"net_amount\":239,\"positive_signals\":[\"chargecode_token_match\"],\"negative_signals\":[],\"recommended_decision\":\"include\",\"source_tools\":[\"POST /agent-tools/billing/candidate-discovery\"]}"
+}
+```
+
+O JSON serializado em `billing_context_json` deve conter, quando disponivel:
+
+```json
+{
+    "candidate_set_kind": "chargecode_key | billing_line_identity | semantic_description_match | bundle_neighbor",
+    "predicate": {
+        "chargecodeKeyIn": ["RMEXAMPLE001"]
+    },
+    "chargecode_keys": ["RMEXAMPLE001"],
+    "productcatalog_keys": ["1234567890"],
+    "productcatalog_descriptions": ["Example Product"],
+    "bundle_offer_captions": ["EXAMPLE BUNDLE"],
+    "billing_line_identity_ids": ["bli-..."],
+    "sample_invoice_line_ids": ["invoice-line-id"],
+    "line_count": 10,
+    "invoice_count": 8,
+    "customer_count": 8,
+    "net_amount": 239,
+    "positive_signals": ["chargecode_token_match", "product_description_match"],
+    "negative_signals": [],
+    "matched_on": {
+        "chargecodeKey": true,
+        "productcatalogDescription": true,
+        "bundleOfferCaption": false
+    },
+    "recommended_decision": "include",
+    "source_tools": [
+        "POST /agent-tools/billing/candidate-discovery",
+        "POST /agent-tools/billing/candidate-clusters",
+        "POST /agent-tools/invoices/sample-lines"
+    ],
+    "observacoes": "Contexto observado pelo agente."
+}
+```
+
+Formato objeto equivalente, quando suportado:
+
+```json
+{
     "billing_context": {
         "candidate_set_kind": "chargecode_key | billing_line_identity | semantic_description_match | bundle_neighbor",
         "predicate": {
@@ -119,7 +171,7 @@ Todo item em `candidate_sets_resumo` deve preservar o contexto de billing que o 
 }
 ```
 
-Campos indisponiveis podem ser arrays vazios ou `null`, mas `billing_context` deve existir para todo candidato. Nao crie candidatos a partir de valor esperado, preco ou janelas de valor.
+Campos indisponiveis podem ser arrays vazios ou `null`, mas `billing_context_json` deve existir para todo candidato. Nao crie candidatos a partir de valor esperado, preco ou janelas de valor.
 
 ## Checks Finais Obrigatorios
 
