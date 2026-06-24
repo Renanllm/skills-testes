@@ -38,14 +38,15 @@ Leia `references/non-confrontable-items.md` quando o dossie trouxer instrucoes o
 5. Para cada regra monetaria ou confrontavel, chame `POST /agent-tools/catalog/search` usando o alvo comercial e tipos provaveis de entidade.
 6. Crie um rascunho de regra com alvo, comportamento esperado, evidencias, datas e incertezas.
 7. Chame `POST /agent-tools/billing/candidate-discovery` com `strategy: "high_recall"`.
-8. Escolha candidatos usando descricao de produto, contexto de bundle e chargecode inferido. Nao use preco esperado, valor faturado ou janelas de valor como criterio de descoberta.
-9. Para candidatos amplos ou ambiguos, chame `POST /agent-tools/billing/candidate-clusters` e `POST /agent-tools/invoices/sample-lines`.
-10. Use `POST /agent-tools/billing/line-identity-search` ou `POST /agent-tools/billing/identifier-search` quando precisar entender relacoes entre produto, bundle, descricao ou charge code.
-11. Produza `candidateQualification` com candidatos incluidos, excluidos e pendentes. Para cada candidato retornado, preserve `billingContext` com charge codes, productcatalog keys, productcatalog descriptions, bundle captions, amostras, sinais e tools de origem.
-12. Chame `POST /agent-tools/billing/qualification-validate` com o predicado final proposto.
-13. Chame `POST /agent-tools/rules/existing`, depois `POST /agent-tools/rules/validate`, depois `POST /agent-tools/rules/conflicts`.
-14. Opcionalmente chame `POST /agent-tools/audit/preview` apenas para uma pequena amostra. Nao calcule impacto final em toda a base.
-15. Retorne o JSON descrito em `references/output-contract.md`.
+8. Quando a regra afetar uma familia/plano de produto, reprecificacao, gratuidade ampla, ou quando o dossie disser "todos os canais", "todos os IDs", "todos os fluxos" ou equivalente, chame `POST /agent-tools/billing/product-family-candidates` antes de fechar o predicado final.
+9. Escolha candidatos usando descricao de produto, papel da linha, contexto de bundle e chargecode inferido. Nao use preco esperado, valor faturado ou janelas de valor como criterio de descoberta.
+10. Para candidatos amplos ou ambiguos, chame `POST /agent-tools/billing/candidate-clusters` e `POST /agent-tools/invoices/sample-lines`.
+11. Use `POST /agent-tools/billing/line-identity-search` ou `POST /agent-tools/billing/identifier-search` quando precisar entender relacoes entre produto, bundle, descricao ou charge code.
+12. Produza `candidateQualification` com candidatos incluidos, excluidos e pendentes. Para cada candidato retornado, preserve `billingContext` com charge codes, productcatalog keys, productcatalog descriptions, bundle captions, amostras, sinais, papel da linha e tools de origem.
+13. Chame `POST /agent-tools/billing/qualification-validate` com o predicado final proposto.
+14. Chame `POST /agent-tools/rules/existing`, depois `POST /agent-tools/rules/validate`, depois `POST /agent-tools/rules/conflicts`.
+15. Opcionalmente chame `POST /agent-tools/audit/preview` apenas para uma pequena amostra. Nao calcule impacto final em toda a base.
+16. Retorne o JSON descrito em `references/output-contract.md`.
 
 ## Regras Duras
 
@@ -56,6 +57,8 @@ Leia `references/non-confrontable-items.md` quando o dossie trouxer instrucoes o
 - Nao use descricao ampla, nome do produto ou nome do bundle como unico predicado final de regra monetaria de linha.
 - Para regras monetarias de linha de fatura, resolva o predicado final para `chargecodeKeyIn` sempre que possivel. Se isso nao for possivel, marque `needs_mapping` ou `needs_agent_qualification`.
 - Se a regra se aplica a um bundle, identifique quais linhas de cobranca sao afetadas. Alvo bundle nao significa automaticamente todas as linhas do bundle.
+- Nao exclua um candidato apenas por aparecer dentro de um bundle/caption. Se `productcatalog_description` representar diretamente o produto/plano afetado, trate o bundle como contexto e inclua o candidato quando o dossie tiver escopo amplo.
+- Classifique o papel da linha antes da decisao final: `direct_product_charge` entra no predicado; `discount`, `different_variant`, `plan_with_benefit` e `context_only` nao entram sem justificativa explicita.
 - Se candidatos forem amplos demais, mantenha-os nos candidate sets, mas exclua ou marque como pendente na qualificacao.
 - Nao retorne candidato ponderado sem `billingContext` estruturado. A decisao do agente precisa carregar o contexto de fatura usado para include, exclude ou pending.
 - Nao use `expected.amount`, preco alvo, valor faturado, `netAmount` ou janelas de valor para selecionar candidatos. Esses valores entram na logica de regra/auditoria depois que as linhas candidatas forem encontradas por descricao/chargecode.

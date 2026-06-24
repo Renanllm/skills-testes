@@ -125,8 +125,10 @@ O JSON serializado em `billing_context_json` deve conter, quando disponivel:
         "bundleOfferCaption": false
     },
     "recommended_decision": "include",
+    "line_role_suggestion": "direct_product_charge | discount | different_variant | plan_with_benefit | context_only | unknown",
     "source_tools": [
         "POST /agent-tools/billing/candidate-discovery",
+        "POST /agent-tools/billing/product-family-candidates",
         "POST /agent-tools/billing/candidate-clusters",
         "POST /agent-tools/invoices/sample-lines"
     ],

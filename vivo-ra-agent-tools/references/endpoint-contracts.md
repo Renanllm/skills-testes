@@ -197,6 +197,55 @@ Use this after drafting the target. It intentionally favors recall and can inclu
 
 When building the final candidate context, copy all available candidate fields such as `candidateSetKind`, `predicate`, `lineCount`, `invoiceCount`, `netAmount`, `matchedOn`, `positiveSignals`, `negativeSignals`, `recommendedDecision` and `risk`.
 
+## Product Family Candidates
+
+```http
+POST /agent-tools/billing/product-family-candidates
+```
+
+Body:
+
+```json
+{
+    "targetNames": ["Disney+", "Disney+ Padrão", "Disney+ Standard"],
+    "excludedVariants": ["Anúncios"],
+    "includeBundleContext": true,
+    "limit": 30
+}
+```
+
+Use esta tool como guardrail de recall sempre que a regra afetar uma familia/plano de produto, uma reprecificacao, gratuidade ampla, ou quando o dossie disser "todos os canais", "todos os IDs", "todos os fluxos" ou equivalente.
+
+Returns `candidates[]` with:
+
+- `candidateSetId`
+- `candidateSetKind`
+- `chargecodeKey`
+- `predicate`
+- `productcatalogDescriptions[]`
+- `bundleOfferCaptions[]`
+- `productcatalogKeys[]`
+- `sampleInvoiceLineIds[]`
+- `lineCount`
+- `invoiceCount`
+- `customerCount`
+- `positiveAmount`
+- `negativeAmount`
+- `netAmount`
+- `lineRoleSuggestion`: `direct_product_charge | discount | different_variant | plan_with_benefit | context_only | unknown`
+- `suggestedDecision`: `include | pending | exclude`
+- `positiveSignals[]`
+- `negativeSignals[]`
+- `rationale`
+- `billingContext`
+
+Regra de decisao:
+
+- Inclua candidatos `direct_product_charge` quando a descricao da linha representa diretamente o produto/plano afetado, mesmo que exista `bundleOfferCaption`.
+- Exclua `discount`, `different_variant` e `plan_with_benefit` do predicado final, mantendo-os como contexto ou evidencia de exclusao.
+- Mantenha `context_only` como `pending`, salvo evidencia explicita de que a regra atinge aquela linha.
+- Nao use `positiveAmount`, `negativeAmount`, `netAmount` ou preco esperado para descobrir candidatos. Valores monetarios servem para contexto e auditoria posterior.
+
 ## Candidate Clusters
 
 ```http

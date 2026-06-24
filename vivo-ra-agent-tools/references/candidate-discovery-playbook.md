@@ -8,11 +8,24 @@ Candidate discovery must favor recall first, then qualification. It is acceptabl
 2. Search catalog with likely kinds: `product`, `variant`, `bundle`, `plan`, `offer`.
 3. Call candidate discovery with `strategy: "high_recall"` and `limit` between 10 and 20.
 4. If the dossier names a known identifier, pass it in `identifiers`.
-5. Inspect buckets in this order:
+5. If the dossier applies broadly to a product family, a reprice, a permanent free rule, or says "todos os canais", "todos os IDs", "todos os fluxos" or equivalent, call `POST /agent-tools/billing/product-family-candidates`.
+6. Inspect buckets in this order:
    1. `directIdentifierMatches`
    2. `lineIdentityCandidates`
    3. `bundleNeighborCandidates`
    4. `semanticDescriptionCandidates`
+
+## Product Family Guardrail
+
+`POST /agent-tools/billing/product-family-candidates` is mandatory for product-family repricing or broad scope rules. It searches invoice lines by product family and returns the line role:
+
+- `direct_product_charge`: the invoice line itself is the affected product or plan. This can be included even when `bundleOfferCaption` is present.
+- `discount`: discount or adjustment line. Keep as excluded/context.
+- `different_variant`: variant explicitly outside the target, such as "com Anúncios" when the dossier covers Standard/Premium.
+- `plan_with_benefit`: parent plan, broadband line, or plan that includes the product as a benefit.
+- `context_only`: only the bundle/caption matches; product description does not directly represent the target.
+
+Bundle context is not an automatic exclusion. If `productcatalog_description` directly names the affected product/plan and the dossier has broad wording such as "todos os canais" or "todos os IDs existentes", include the candidate unless another rule or evidence excludes it.
 
 ## Bucket Semantics
 
