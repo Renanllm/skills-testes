@@ -53,7 +53,6 @@ Most dossiers will not name `chargecode_key`, `productcatalog_key`, or exact inv
 - sample invoice lines;
 - 1:1 chargecode-product stats;
 - catalog aliases and relationships;
-- whether the line amount looks like the expected target charge;
 - whether the line belongs to the same commercial bundle but is a different product.
 
 If the candidate set is still uncertain, keep the rule and mark `needs_mapping` or `needs_agent_audit`. Do not collapse uncertainty into a fake mapping.

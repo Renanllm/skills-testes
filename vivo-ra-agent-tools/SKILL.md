@@ -34,17 +34,18 @@ Leia `references/non-confrontable-items.md` quando o dossie trouxer instrucoes o
 1. Leia o dossie multimodalmente. Prefira a leitura visual/OCR direta quando o workflow fornecer o PDF.
 2. Identifique toda declaracao do dossie que possa afetar valor de fatura. Mapeie declaracoes monetarias nao suportadas com `support.confrontabilityStatus`; mantenha itens puramente operacionais separados.
 3. Chame `GET /agent-tools/rule-dsl/contract`.
-4. Para cada regra monetaria ou confrontavel, chame `POST /agent-tools/catalog/search` usando o alvo comercial e tipos provaveis de entidade.
-5. Crie um rascunho de regra com alvo, comportamento esperado, evidencias, datas e incertezas.
-6. Chame `POST /agent-tools/billing/candidate-discovery` com `strategy: "high_recall"`.
-7. Escolha candidatos usando descricao de produto, contexto de bundle e chargecode inferido. Nao use preco esperado, valor faturado ou janelas de valor como criterio de descoberta.
-8. Para candidatos amplos ou ambiguos, chame `POST /agent-tools/billing/candidate-clusters` e `POST /agent-tools/invoices/sample-lines`.
-9. Use `POST /agent-tools/billing/line-identity-search` ou `POST /agent-tools/billing/identifier-search` quando precisar entender relacoes entre produto, bundle, descricao ou charge code.
-10. Produza `candidateQualification` com candidatos incluidos, excluidos e pendentes. Para cada candidato retornado, preserve `billingContext` com charge codes, productcatalog keys, productcatalog descriptions, bundle captions, amostras, sinais e tools de origem.
-11. Chame `POST /agent-tools/billing/qualification-validate` com o predicado final proposto.
-12. Chame `POST /agent-tools/rules/existing`, depois `POST /agent-tools/rules/validate`, depois `POST /agent-tools/rules/conflicts`.
-13. Opcionalmente chame `POST /agent-tools/audit/preview` apenas para uma pequena amostra. Nao calcule impacto final em toda a base.
-14. Retorne o JSON descrito em `references/output-contract.md`.
+4. Se o contrato retornado nao for compativel com `v0.3`, pare e retorne `status: "blocked"` com `contract_mismatch` no resumo da tool. Nao tente adaptar uma regra nova para contrato antigo.
+5. Para cada regra monetaria ou confrontavel, chame `POST /agent-tools/catalog/search` usando o alvo comercial e tipos provaveis de entidade.
+6. Crie um rascunho de regra com alvo, comportamento esperado, evidencias, datas e incertezas.
+7. Chame `POST /agent-tools/billing/candidate-discovery` com `strategy: "high_recall"`.
+8. Escolha candidatos usando descricao de produto, contexto de bundle e chargecode inferido. Nao use preco esperado, valor faturado ou janelas de valor como criterio de descoberta.
+9. Para candidatos amplos ou ambiguos, chame `POST /agent-tools/billing/candidate-clusters` e `POST /agent-tools/invoices/sample-lines`.
+10. Use `POST /agent-tools/billing/line-identity-search` ou `POST /agent-tools/billing/identifier-search` quando precisar entender relacoes entre produto, bundle, descricao ou charge code.
+11. Produza `candidateQualification` com candidatos incluidos, excluidos e pendentes. Para cada candidato retornado, preserve `billingContext` com charge codes, productcatalog keys, productcatalog descriptions, bundle captions, amostras, sinais e tools de origem.
+12. Chame `POST /agent-tools/billing/qualification-validate` com o predicado final proposto.
+13. Chame `POST /agent-tools/rules/existing`, depois `POST /agent-tools/rules/validate`, depois `POST /agent-tools/rules/conflicts`.
+14. Opcionalmente chame `POST /agent-tools/audit/preview` apenas para uma pequena amostra. Nao calcule impacto final em toda a base.
+15. Retorne o JSON descrito em `references/output-contract.md`.
 
 ## Regras Duras
 

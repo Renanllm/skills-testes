@@ -55,21 +55,9 @@ For monetary line-level rules:
 5. Validate with `/billing/qualification-validate`.
 6. If `isExecutable` is false, return `needs_mapping`.
 
-## Vivo Recado Pattern
+## Bundle Neighbor Rule
 
-Manual/client provisional mapping for the POC:
-
-```json
-{
-  "target": "Vivo Recado",
-  "includedChargecodes": ["RMVIVORECADM", "RMVIVORECADVT"],
-  "finalPredicate": {
-    "chargecodeKeyIn": ["RMVIVORECADM", "RMVIVORECADVT"]
-  }
-}
-```
-
-If candidate discovery also returns bundle neighbors such as other digital services inside the same bundle, exclude them unless the dossier says the bundle itself is the billing target.
+If candidate discovery returns bundle neighbors, sibling components, or broad description hits, exclude them unless the dossier says the bundle itself is the billing target or the evidence shows the same commercial product is represented by that billing identity.
 
 ## Qualification Output Fragment
 
