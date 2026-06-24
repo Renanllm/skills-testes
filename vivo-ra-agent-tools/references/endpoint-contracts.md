@@ -1,0 +1,401 @@
+# Endpoint Contracts
+
+Base URL:
+
+```txt
+https://server-production-4285.up.railway.app
+```
+
+Auth:
+
+```http
+Authorization: Bearer {{AGENT_TOOLS_TOKEN}}
+Content-Type: application/json
+```
+
+`GET /agent-tools/health` is public. Every other `/agent-tools/*` endpoint requires the bearer token. Never include the token in outputs.
+
+## Common Predicate
+
+Use this shape for invoice-line predicates:
+
+```json
+{
+    "invoiceKeys": ["3332859950_358710428"],
+    "chargecodeKeyIn": ["RMVIVORECADM"],
+    "billingLineIdentityIn": [
+        {
+            "bundleOfferCaption": "Servico Digital 9 TBF",
+            "productcatalogDescription": "Vivo Recado",
+            "chargecodeKey": "RMVIVORECADM"
+        }
+    ],
+    "productcatalogKeyIn": ["1125259208"],
+    "bundleOfferCaptionIn": ["Servico Digital 9 TBF"],
+    "descriptionContains": "Vivo Recado"
+}
+```
+
+For final monetary rules, prefer `chargecodeKeyIn` or `billingLineIdentityIn` with a `chargecodeKey`. Use `descriptionContains`, `productcatalogKeyIn` and `bundleOfferCaptionIn` only for recall, never as the only final predicate unless the rule is explicitly marked `needs_mapping`, `confrontable_after_mapping` or `needs_agent_qualification`.
+
+Do not use `minAmount`, `maxAmount`, expected price or billed amount to discover candidates.
+
+## Health
+
+```http
+GET /agent-tools/health
+```
+
+Returns service status and version.
+
+## Rule DSL Contract
+
+```http
+GET /agent-tools/rule-dsl/contract
+```
+
+Use before creating a rule. Returns DSL purpose, official amount field, canonical shape, and workflow guidance.
+
+## Catalog Search
+
+```http
+POST /agent-tools/catalog/search
+```
+
+Body:
+
+```json
+{
+    "query": "Vivo Recado",
+    "entityKinds": ["product", "variant", "bundle", "plan", "offer"],
+    "needsReview": false,
+    "limit": 20,
+    "offset": 0
+}
+```
+
+Returns `candidates[]` with:
+
+- `entityId`
+- `entityKind`
+- `canonicalName`
+- `displayName`
+- `category`
+- `entitySubtype`
+- `confidence`
+- `needsReview`
+- `aliases[]`
+- `billingIdentifiers[]`
+- `invoiceStats.lineCount`
+- `invoiceStats.invoiceCount`
+- `invoiceStats.netAmount`
+
+Use this to understand the commercial catalog, not to approve billing mappings by itself.
+
+## Catalog Entity Detail
+
+```http
+GET /agent-tools/catalog/entities/:entityId
+```
+
+Returns one entity with aliases, variants, relationships, source data, and invoice stats.
+
+## Billing Identifier Search
+
+```http
+POST /agent-tools/billing/identifier-search
+```
+
+Body:
+
+```json
+{
+    "query": "Vivo Recado",
+    "identifierKinds": ["chargecode_key", "productcatalog_key", "bundle_offer_caption"],
+    "onlyChargecodeProduct1to1": true,
+    "limit": 20,
+    "offset": 0
+}
+```
+
+Returns `identifiers[]` with:
+
+- `identifierKind`
+- `identifierValue`
+- `normalizedDescription`
+- `confidenceHint`
+- `isChargecodeProduct1to1`
+- `productcatalogKeys[]`
+- `bundleCaptions[]`
+- `invoiceLineCount`
+- `invoiceCount`
+- `customerCount`
+- `amountBreakdown`
+
+Use this to inspect whether a `chargecode_key` is stable. A 1:1 chargecode-product relationship is a strong signal, not automatic business approval.
+
+## Billing Line Identity Search
+
+```http
+POST /agent-tools/billing/line-identity-search
+```
+
+Body:
+
+```json
+{
+    "query": "Vivo Recado",
+    "productcatalogKeys": ["1125259208"],
+    "bundleOfferCaptions": ["Servico Digital 9 TBF"],
+    "chargecodeKeys": ["RMVIVORECADM"],
+    "limit": 20,
+    "offset": 0
+}
+```
+
+Returns `identities[]` with composed invoice-line identity:
+
+- `billingLineIdentityId`
+- `productcatalogKey`
+- `productcatalogDescription`
+- `bundleOfferCaption`
+- `chargecodeKey`
+- counts and amounts
+
+Use this when the candidate is only understandable through bundle + product description + charge code context. Do not return `billingLineIdentityId` as the final predicate unless the server contract later adds direct support for it; translate to supported predicate fields.
+
+## Candidate Discovery
+
+```http
+POST /agent-tools/billing/candidate-discovery
+```
+
+Body:
+
+```json
+{
+    "targetName": "Vivo Recado",
+    "entityKinds": ["product"],
+    "identifiers": ["RMVIVORECADM", "RMVIVORECADVT"],
+    "strategy": "high_recall",
+    "limit": 20
+}
+```
+
+Returns:
+
+- `candidateSets[]`
+- `candidateBuckets.directIdentifierMatches[]`
+- `candidateBuckets.bundleNeighborCandidates[]`
+- `candidateBuckets.lineIdentityCandidates[]`
+- `candidateBuckets.semanticDescriptionCandidates[]`
+- catalog and billing candidates
+- `recommendedNextToolCalls[]`
+- warnings and guidance
+
+Use this after drafting the target. It intentionally favors recall and can include false positives. Candidate discovery uses product description, bundle context and inferred chargecode keys; it must not use expected price, billed amount, `netAmount`, or amount windows as discovery criteria.
+
+When building the final candidate context, copy all available candidate fields such as `candidateSetKind`, `predicate`, `lineCount`, `invoiceCount`, `netAmount`, `matchedOn`, `positiveSignals`, `negativeSignals`, `recommendedDecision` and `risk`.
+
+## Candidate Clusters
+
+```http
+POST /agent-tools/billing/candidate-clusters
+```
+
+Body:
+
+```json
+{
+    "predicate": {
+        "chargecodeKeyIn": ["RMVIVORECADM", "RMVIVORECADVT"]
+    },
+    "groupBy": ["chargecode_key", "productcatalog_key", "bundle_offer_caption"],
+    "limit": 30
+}
+```
+
+Returns grouped counts and amounts. Use this to see whether a candidate is a focused product line, a bundle neighbor, or an ambiguous mapping.
+
+Use clusters to fill candidate `billingContext` fields: `productcatalogKeys`, `productcatalogDescriptions`, `bundleOfferCaptions`, `chargecodeKeys`, `lineCount`, `invoiceCount`, `customerCount` and `netAmount`.
+
+## Qualification Validate
+
+```http
+POST /agent-tools/billing/qualification-validate
+```
+
+Body:
+
+```json
+{
+    "finalPredicate": {
+        "chargecodeKeyIn": ["RMVIVORECADM", "RMVIVORECADVT"]
+    },
+    "candidateQualification": {
+        "includeCandidateSetIds": ["cand-chargecode-RMVIVORECADM"],
+        "excludeCandidateSetIds": ["cand-description-vivo-recado"],
+        "rationale": "Direct charge codes match target; broad description is over-inclusive."
+    }
+}
+```
+
+Returns:
+
+- `isExecutable`
+- `warnings[]`
+- `coverage.lineCount`
+- `coverage.invoiceCount`
+- `coverage.customerCount`
+- `coverage.positiveAmount`
+- `coverage.netAmount`
+- echoed `finalPredicate` and qualification
+
+Use this before returning a final predicate.
+
+## Existing Rules
+
+```http
+POST /agent-tools/rules/existing
+```
+
+Body:
+
+```json
+{
+    "dossierCode": "T3DMND0020131",
+    "targetEntityIds": ["catalog-entity-id"],
+    "status": ["active", "approved", "draft"],
+    "limit": 50,
+    "offset": 0
+}
+```
+
+Use this to understand if the new rule overlaps with prior rules.
+
+## Rule Validate
+
+```http
+POST /agent-tools/rules/validate
+```
+
+Body:
+
+```json
+{
+    "ruleDraft": {
+        "ruleName": "Vivo Recado - no charge",
+        "ruleType": "free_period",
+        "target": {
+            "entityName": "Vivo Recado",
+            "entityKind": "product",
+            "affectedScope": "single_charge_line"
+        },
+        "financialImpact": {
+            "monetary": true,
+            "impactKind": "customer_credit_risk",
+            "amountField": "c.chargetotalamount"
+        },
+        "predicate": {
+            "chargecodeKeyIn": ["RMVIVORECADM"]
+        },
+        "calculation": {
+            "kind": "no_charge",
+            "amountField": "charge_total_amount",
+            "expected": {
+                "amount": 0
+            },
+            "requiredColumns": ["charge_total_amount"],
+            "tolerance": 0.01
+        },
+        "support": {
+            "confrontabilityStatus": "confrontable_deterministic",
+            "unsupportedReasons": [],
+            "requiredExternalData": []
+        },
+        "evidence": []
+    }
+}
+```
+
+Returns `valid`, `errors[]`, `warnings[]`, `confrontabilityStatus`, `canAuditDeterministically`, `requiredColumns`, and `normalizedRule`.
+
+## Rule Conflicts
+
+```http
+POST /agent-tools/rules/conflicts
+```
+
+Body:
+
+```json
+{
+    "targetEntityIds": ["catalog-entity-id"],
+    "predicate": {
+        "chargecodeKeyIn": ["RMVIVORECADM"]
+    },
+    "effectiveFrom": "2026-01-01",
+    "effectiveTo": null
+}
+```
+
+Use this after rule validation. Conflicts do not always block the rule, but they require precedence reasoning or human review.
+
+## Audit Preview
+
+```http
+POST /agent-tools/audit/preview
+```
+
+Body:
+
+```json
+{
+    "ruleDraft": {},
+    "predicate": {
+        "chargecodeKeyIn": ["RMVIVORECADM"]
+    },
+    "limit": 20
+}
+```
+
+Returns a deterministic preview with:
+
+- `isExecutable`
+- `blocked`
+- `blockReason`
+- `warnings[]`
+- `expected`
+- `summary.auditedLines`
+- `summary.actualAmount`
+- `summary.expectedAmount`
+- `summary.amountDelta`
+- `summary.divergentLines`
+- `summary.recoverableRevenue`
+- `summary.customerCreditRisk`
+- `summary.financialImpactAmount`
+- `previewLines[]`
+
+For monetary rules, final audit requires `chargecodeKeyIn` or `billingLineIdentityIn[]` with `chargecodeKey`. Semantic predicates such as `descriptionContains` are blocked here and should stay in candidate discovery/review.
+
+Use preview to inspect deterministic behavior before running the internal audit job. Do not ask the agent to audit all invoice lines manually.
+
+## Invoice Sample Lines
+
+```http
+POST /agent-tools/invoices/sample-lines
+```
+
+Body:
+
+```json
+{
+    "predicate": {
+        "chargecodeKeyIn": ["RMVIVORECADM"]
+    },
+    "limit": 20,
+    "offset": 0
+}
+```
+
+Returns `lines[]` with invoice key, customer key, product catalog key, product description, bundle caption, chargecode key, amount, and effective date.
