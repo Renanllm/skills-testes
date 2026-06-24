@@ -1,159 +1,136 @@
-# Output Contract
+# Contrato de Saida
 
-Return one JSON object only. Do not include prose outside the JSON.
+Retorne um unico objeto JSON. Nao inclua texto fora do JSON.
 
-The output must preserve both auditable rules and mapped-but-unsupported statements. Unsupported statements are useful for backlog and coverage, but they must not generate financial impact.
+O envelope externo deve usar os nomes de campo em portugues declarados no output format do workflow. As chaves tecnicas da DSL v0.3 devem ficar preservadas dentro dos campos JSON serializados, como `rule_draft_json`, `calculation_json`, `support_json` e `predicado_final_json`.
 
 ```json
 {
     "status": "draft | needs_mapping | needs_agent_qualification | needs_review | blocked | completed",
-    "dossier": {
-        "fileName": "T3DMND0020131.pdf",
-        "dossierCode": "T3DMND0020131",
-        "title": "Optional title inferred from dossier"
+    "dossie": {
+        "arquivo": "20131.pdf",
+        "codigo": "20131",
+        "titulo": "Titulo inferido do dossie"
     },
-    "summary": {
-        "financialRuleCount": 1,
-        "mappedUnsupportedCount": 2,
-        "nonMonetaryCount": 1,
-        "candidateSetCount": 4,
-        "finalPredicateCount": 1,
-        "openQuestionCount": 1
+    "resumo": {
+        "narrativa": "Resumo curto em portugues brasileiro.",
+        "quantidade_regras_financeiras": 1,
+        "quantidade_itens_mapeados_nao_suportados": 2,
+        "quantidade_itens_nao_confrontaveis": 1,
+        "quantidade_candidate_sets": 4,
+        "quantidade_predicados_finais": 1,
+        "quantidade_perguntas_abertas": 1
     },
-    "financialRules": [
+    "regras_financeiras": [
         {
-            "ruleDraft": {
-                "ruleName": "",
-                "ruleType": "fixed_price | no_charge | discount | usage_tariff | prorata | bundle_composition | presence_rule | free_period | exclusion | migration_price | other_monetary | not_monetary",
-                "target": {
-                    "entityName": "",
-                    "entityKind": "product | variant | bundle | plan | offer | unknown",
-                    "entityIds": [],
-                    "affectedScope": "single_charge_line | product | bundle | plan | account | unknown"
-                },
-                "financialImpact": {
-                    "monetary": true,
-                    "impactKind": "customer_credit_risk | recovery_opportunity | validation_only",
-                    "amountField": "c.chargetotalamount"
-                },
-                "predicate": {},
-                "calculation": {
-                    "kind": "fixed_amount | no_charge | discount_amount | discount_percent | usage_event_tariff | usage_duration_tariff | usage_volume_tariff | daily_rate | prorata_by_period | bundle_component_sum | forbidden_charge | presence_required | custom_logic",
-                    "amountField": "charge_total_amount",
-                    "expected": {},
-                    "requiredColumns": ["charge_total_amount"],
-                    "tolerance": 0.01
-                },
-                "support": {
-                    "confrontabilityStatus": "confrontable_deterministic | confrontable_after_mapping | needs_agent_qualification | needs_mapping | needs_usage_quantity | needs_reference_price | needs_crm | needs_subscription_event | needs_entitlement_inventory | needs_review | not_monetary | not_supported_yet | blocked",
-                    "unsupportedReasons": [],
-                    "requiredExternalData": []
-                },
-                "evidence": []
-            },
-            "confrontabilityStatus": "confrontable_deterministic | confrontable_after_mapping | needs_agent_qualification | needs_mapping | needs_usage_quantity | needs_reference_price | needs_crm | needs_subscription_event | needs_entitlement_inventory | needs_review | not_monetary | not_supported_yet | blocked",
-            "candidateSets": [],
-            "candidateQualification": {
-                "status": "agent_qualified_needs_human_confirmation",
-                "included": [],
-                "excluded": [],
-                "pending": [],
-                "finalPredicate": {},
-                "rationale": ""
-            },
-            "qualificationValidation": {},
-            "ruleValidation": {},
-            "conflicts": [],
-            "evidence": [],
-            "assumptions": [],
-            "openQuestions": []
+            "nome_regra": "",
+            "tipo_regra": "fixed_price | no_charge | discount | usage_tariff | prorata | bundle_composition | presence_rule | free_period | exclusion | migration_price | other_monetary",
+            "status_confrontabilidade": "confrontable_deterministic | confrontable_after_mapping | needs_agent_qualification | needs_mapping | needs_usage_quantity | needs_reference_price | needs_crm | needs_subscription_event | needs_entitlement_inventory | needs_review | not_supported_yet | blocked",
+            "alvo_nome": "",
+            "alvo_tipo": "product | variant | bundle | plan | offer | unknown",
+            "escopo_afetado": "single_charge_line | product | bundle | plan | account | unknown",
+            "campo_monetario": "c.chargetotalamount",
+            "comportamento_esperado": "",
+            "calculation_kind": "fixed_amount | no_charge | discount_amount | discount_percent | usage_event_tariff | usage_duration_tariff | usage_volume_tariff | daily_rate | prorata_by_period | bundle_component_sum | forbidden_charge | presence_required | custom_logic",
+            "required_columns": ["charge_total_amount"],
+            "valor_esperado": 0,
+            "rule_draft_json": "{\"ruleName\":\"...\",\"calculation\":{\"kind\":\"no_charge\"}}",
+            "calculation_json": "{\"kind\":\"no_charge\",\"amountField\":\"charge_total_amount\"}",
+            "support_json": "{\"confrontabilityStatus\":\"confrontable_deterministic\",\"unsupportedReasons\":[]}",
+            "predicado_final_json": "{\"chargecodeKeyIn\":[\"RMVIVORECADM\"]}",
+            "candidate_sets_resumo": [],
+            "validacao_resumo": "",
+            "conflitos_resumo": "",
+            "evidencias": [],
+            "premissas": [],
+            "perguntas_abertas": []
         }
     ],
-    "mappedUnsupportedItems": [
+    "itens_mapeados_nao_suportados": [
         {
-            "title": "",
-            "supportStatus": "needs_crm | needs_subscription_event | needs_entitlement_inventory | needs_usage_quantity | needs_reference_price | not_supported_yet | needs_mapping | not_monetary",
-            "unsupportedReasons": [],
-            "requiredExternalData": [],
-            "possibleFutureRuleType": "",
-            "target": {},
-            "calculationHint": {},
-            "reason": "",
-            "evidence": []
+            "titulo": "",
+            "status_suporte": "needs_crm | needs_subscription_event | needs_entitlement_inventory | needs_usage_quantity | needs_reference_price | not_supported_yet | needs_mapping | not_monetary",
+            "unsupported_reasons": [],
+            "required_external_data": [],
+            "tipo_regra_possivel": "",
+            "alvo_nome": "",
+            "calculation_hint_json": "{}",
+            "motivo": "",
+            "evidencia": ""
         }
     ],
-    "nonConfrontableItems": [
+    "itens_nao_confrontaveis": [
         {
-            "title": "",
-            "reason": "",
-            "evidence": []
+            "titulo": "",
+            "motivo": "",
+            "evidencia": ""
         }
     ],
-    "toolTrace": [
+    "tool_trace": [
         {
             "tool": "POST /agent-tools/billing/candidate-discovery",
-            "purpose": "Find broad candidates for Vivo Recado",
-            "resultSummary": "2 direct identifier matches; broad description candidate excluded"
+            "finalidade": "Encontrar candidatos amplos",
+            "resumo_resultado": "2 candidatos diretos; 1 candidato amplo pendente"
         }
     ],
-    "globalOpenQuestions": []
+    "perguntas_abertas_globais": []
 }
 ```
 
-## Required `candidateSets` Context
+## Contexto Obrigatorio de Candidatos
 
-Every candidate returned inside a financial rule must preserve the billing context the agent used to qualify it. Do not return only id, decision and rationale.
+Todo item em `candidate_sets_resumo` deve preservar o contexto de billing que o agente usou para decidir. Nao retorne apenas id, decisao e motivo.
 
 ```json
 {
-    "candidateSetId": "cand-chargecode-RMEXAMPLE001",
-    "decision": "include | exclude | pending",
-    "rationale": "Short rationale.",
-    "billingContext": {
-        "candidateSetKind": "chargecode_key | billing_line_identity | semantic_description_match | bundle_neighbor",
+    "candidate_set_id": "cand-chargecode-RMEXAMPLE001",
+    "decisao": "include | exclude | pending",
+    "motivo": "Racional curto em portugues.",
+    "billing_context": {
+        "candidate_set_kind": "chargecode_key | billing_line_identity | semantic_description_match | bundle_neighbor",
         "predicate": {
             "chargecodeKeyIn": ["RMEXAMPLE001"]
         },
-        "chargecodeKeys": ["RMEXAMPLE001"],
-        "productcatalogKeys": ["1234567890"],
-        "productcatalogDescriptions": ["Example Product"],
-        "bundleOfferCaptions": ["EXAMPLE BUNDLE"],
-        "billingLineIdentityIds": ["bli-..."],
-        "sampleInvoiceLineIds": ["invoice-line-id"],
-        "lineCount": 10,
-        "invoiceCount": 8,
-        "customerCount": 8,
-        "netAmount": 239,
-        "positiveSignals": ["chargecode_token_match", "product_description_match"],
-        "negativeSignals": [],
-        "matchedOn": {
+        "chargecode_keys": ["RMEXAMPLE001"],
+        "productcatalog_keys": ["1234567890"],
+        "productcatalog_descriptions": ["Example Product"],
+        "bundle_offer_captions": ["EXAMPLE BUNDLE"],
+        "billing_line_identity_ids": ["bli-..."],
+        "sample_invoice_line_ids": ["invoice-line-id"],
+        "line_count": 10,
+        "invoice_count": 8,
+        "customer_count": 8,
+        "net_amount": 239,
+        "positive_signals": ["chargecode_token_match", "product_description_match"],
+        "negative_signals": [],
+        "matched_on": {
             "chargecodeKey": true,
             "productcatalogDescription": true,
             "bundleOfferCaption": false
         },
-        "recommendedDecision": "include",
-        "sourceTools": [
+        "recommended_decision": "include",
+        "source_tools": [
             "POST /agent-tools/billing/candidate-discovery",
             "POST /agent-tools/billing/candidate-clusters",
             "POST /agent-tools/invoices/sample-lines"
         ],
-        "notes": "Billing context observed by the agent."
+        "observacoes": "Contexto observado pelo agente."
     }
 }
 ```
 
-Fields not available from tools may be empty arrays or `null`, but `billingContext` must exist for every candidate. Do not create candidates from expected amount or price windows.
+Campos indisponiveis podem ser arrays vazios ou `null`, mas `billing_context` deve existir para todo candidato. Nao crie candidatos a partir de valor esperado, preco ou janelas de valor.
 
-## Required Final Checks
+## Checks Finais Obrigatorios
 
-Before returning:
+Antes de retornar:
 
-1. Every financial rule must have evidence.
-2. Every financial rule must have `financialImpact.monetary: true`.
-3. Every financial rule must have `calculation.kind`, `calculation.requiredColumns` and `support.confrontabilityStatus`.
-4. Every `confrontable_deterministic` rule must have an executable predicate.
-5. Every monetary final predicate must include `chargecodeKeyIn` or `billingLineIdentityIn[].chargecodeKey`.
-6. Every broad candidate must be included, excluded, or pending.
-7. Every unsupported rule-like statement must be returned under `mappedUnsupportedItems[]` or as a financial rule with non-deterministic `support.confrontabilityStatus`.
-8. Every tool failure must be reflected in `status: "blocked"` or `globalOpenQuestions`.
-9. Every returned candidate has structured billing context with available product descriptions, product keys, bundle captions and charge codes.
+1. Toda regra financeira deve ter evidencia.
+2. Toda regra financeira deve ter `financialImpact.monetary: true` dentro de `rule_draft_json`.
+3. Toda regra financeira deve ter `calculation.kind`, `calculation.requiredColumns` e `support.confrontabilityStatus`.
+4. Toda regra `confrontable_deterministic` deve ter predicado executavel.
+5. Todo predicado monetario final deve incluir `chargecodeKeyIn` ou `billingLineIdentityIn[].chargecodeKey`.
+6. Todo candidato amplo deve estar como `include`, `exclude` ou `pending`.
+7. Toda declaracao monetaria sem suporte deterministico deve aparecer em `itens_mapeados_nao_suportados` ou em `regras_financeiras` com `status_confrontabilidade` nao deterministico.
+8. Toda falha de tool deve aparecer em `status: "blocked"` ou `perguntas_abertas_globais`.
+9. Nenhum campo deve conter o bearer token.
