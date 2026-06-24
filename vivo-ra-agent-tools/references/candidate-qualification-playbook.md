@@ -67,19 +67,19 @@ If candidate discovery returns bundle neighbors, sibling components, or broad de
     "status": "agent_qualified_needs_human_confirmation",
     "included": [
       {
-        "candidateSetId": "cand-chargecode-RMVIVORECADM",
-        "reason": "Direct chargecode token match for Vivo Recado and invoice samples show the target service."
+        "candidateSetId": "cand-chargecode-RMEXAMPLE001",
+        "reason": "Direct chargecode token match and invoice samples show the target service."
       }
     ],
     "excluded": [
       {
-        "candidateSetId": "cand-description-vivo-recado",
+        "candidateSetId": "cand-description-broad-match",
         "reason": "Description search is broad and can include bundle captions or adjacent products."
       }
     ],
     "pending": [],
     "finalPredicate": {
-      "chargecodeKeyIn": ["RMVIVORECADM", "RMVIVORECADVT"]
+      "chargecodeKeyIn": ["RMEXAMPLE001", "RMEXAMPLE002"]
     },
     "rationale": "The final predicate uses direct charge codes rather than broad description or bundle context."
   }
