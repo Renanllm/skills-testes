@@ -12,7 +12,7 @@ Before qualifying, inspect:
 - catalog entity aliases and relationships when relevant;
 - existing rules and conflicts.
 
-Candidate discovery must be based on product description, bundle context, `productcatalog_description`, line identities and inferred chargecode keys. Do not use expected price, billed amount, `netAmount`, or amount windows to select candidates. Monetary values are used later to define and audit the rule, after the candidate lines have been found.
+Candidate discovery must start with product/family names against `chargecode_description` and `bill_message_text`. Use `productcatalog_description`, bundle context, line identities, catalog aliases and inferred chargecode keys only to qualify the line role and decide include/exclude/pending. Do not use expected price, billed amount, `netAmount`, or amount windows to select candidates. Monetary values are used later to define and audit the rule, after the candidate lines have been found.
 
 ## Include, Exclude, Pending
 
@@ -27,6 +27,8 @@ Each decision needs a short rationale.
 Before deciding, classify the invoice line role when available:
 
 - `direct_product_charge`: include when the dossier covers the product/plan and no more specific rule excludes it. Bundle/caption context alone is not a reason to exclude.
+- `chargecode_description_match`: include or keep pending according to samples and product context; this is usually a strong signal because the chargecode description names the target.
+- `sva_ambiguous`: keep pending or include only when chargecode description/bill message and samples make clear that the generic SVA line is the affected product.
 - `discount`: exclude from final charge predicate; keep as context if useful.
 - `different_variant`: exclude unless the dossier explicitly covers that variant.
 - `plan_with_benefit`: exclude from final charge predicate; it is a parent plan or benefit container.
@@ -41,6 +43,8 @@ When available, include:
 - `candidateSetKind`;
 - `predicate`;
 - `chargecodeKeys`;
+- `chargecodeDescriptions`;
+- `billMessageTexts`;
 - `productcatalogKeys`;
 - `productcatalogDescriptions`;
 - `bundleOfferCaptions`;
@@ -48,6 +52,7 @@ When available, include:
 - `sampleInvoiceLineIds`;
 - `lineCount`, `invoiceCount`, `customerCount`, `netAmount`;
 - `positiveSignals`, `negativeSignals`, `matchedOn`, `recommendedDecision`;
+- `candidateSourcePriority`, `lineRoleSuggestion`, `ambiguityReason`;
 - `sourceTools`.
 
 Use candidate discovery as the starting source, clusters to fill chargecode/productcatalog/bundle/description combinations, sample lines for concrete line examples, and line identity search when the line only makes sense through `bundle + productcatalog_description + chargecode_key`.
@@ -92,6 +97,16 @@ If candidate discovery returns bundle neighbors, sibling components, or broad de
         "pending": [],
         "finalPredicate": {
             "chargecodeKeyIn": ["RMEXAMPLE001", "RMEXAMPLE002"]
+        },
+        "disambiguation": {
+            "missingDisambiguators": ["crm_product_id"],
+            "requiredCrmChecks": ["crm_product_id"],
+            "rationale": "A fatura identifica o chargecode, mas nao o ID CRM da oferta contratada."
+        },
+        "stacking": {
+            "stackingPolicy": "requires_manual_review",
+            "competingRulePolicy": "highest_expected_amount_for_underbilling",
+            "rationale": "Se houver mais de uma regra no mesmo chargecode, o motor calcula recuperacao pelo maior valor esperado e marca checks externos."
         },
         "rationale": "The final predicate uses direct charge codes rather than broad description or bundle context."
     }

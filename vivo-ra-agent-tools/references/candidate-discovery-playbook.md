@@ -9,17 +9,20 @@ Candidate discovery must favor recall first, then qualification. It is acceptabl
 3. Call candidate discovery with `strategy: "high_recall"` and `limit` between 10 and 20.
 4. If the dossier names a known identifier, pass it in `identifiers`.
 5. If the dossier applies broadly to a product family, a reprice, a permanent free rule, or says "todos os canais", "todos os IDs", "todos os fluxos" or equivalent, call `POST /agent-tools/billing/product-family-candidates`.
-6. Inspect buckets in this order:
-   1. `directIdentifierMatches`
-   2. `lineIdentityCandidates`
-   3. `bundleNeighborCandidates`
-   4. `semanticDescriptionCandidates`
+6. Inspect candidate evidence in this order:
+   1. `chargecode_description` exact or strong match.
+   2. `bill_message_text` exact or strong match.
+   3. `productcatalog_description`.
+   4. `bundle_offer_caption` and composed line identity.
+   5. Broad semantic description recall.
 
 ## Product Family Guardrail
 
 `POST /agent-tools/billing/product-family-candidates` is mandatory for product-family repricing or broad scope rules. It searches invoice lines by product family and returns the line role:
 
 - `direct_product_charge`: the invoice line itself is the affected product or plan. This can be included even when `bundleOfferCaption` is present.
+- `chargecode_description_match`: the chargecode description or bill message names the target product, but product/bundle context still needs qualification.
+- `sva_ambiguous`: product description is generic, such as `SVA`, but chargecode description or bill message names the target. Keep it as considered/pending unless samples confirm the affected billing line.
 - `discount`: discount or adjustment line. Keep as excluded/context.
 - `different_variant`: variant explicitly outside the target, such as "com Anúncios" when the dossier covers Standard/Premium.
 - `plan_with_benefit`: parent plan, broadband line, or plan that includes the product as a benefit.
@@ -31,7 +34,7 @@ Bundle context is not an automatic exclusion. If `productcatalog_description` di
 
 ### directIdentifierMatches
 
-Best signal. These are charge codes whose value directly matches target tokens or have strong deterministic behavior.
+Best signal. These are charge codes whose `chargecode_description` or `bill_message_text` exactly/strongly names the dossier target, or whose value directly matches target tokens.
 
 Example for Vivo Recado:
 

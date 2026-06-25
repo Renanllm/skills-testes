@@ -123,6 +123,9 @@ Returns `identifiers[]` with:
 - `identifierKind`
 - `identifierValue`
 - `normalizedDescription`
+- `chargecodeDescription`
+- `billMessageText`
+- `descriptionMatchTokens[]`
 - `confidenceHint`
 - `isChargecodeProduct1to1`
 - `productcatalogKeys[]`
@@ -193,9 +196,9 @@ Returns:
 - `recommendedNextToolCalls[]`
 - warnings and guidance
 
-Use this after drafting the target. It intentionally favors recall and can include false positives. Candidate discovery uses product description, bundle context and inferred chargecode keys; it must not use expected price, billed amount, `netAmount`, or amount windows as discovery criteria.
+Use this after drafting the target. It intentionally favors recall and can include false positives. Candidate discovery prioritizes `chargecode_description` and `bill_message_text`, then uses product description, bundle context and inferred chargecode keys as qualification context; it must not use expected price, billed amount, `netAmount`, or amount windows as discovery criteria.
 
-When building the final candidate context, copy all available candidate fields such as `candidateSetKind`, `predicate`, `lineCount`, `invoiceCount`, `netAmount`, `matchedOn`, `positiveSignals`, `negativeSignals`, `recommendedDecision` and `risk`.
+When building the final candidate context, copy all available candidate fields such as `candidateSetKind`, `predicate`, `chargecodeDescription`, `billMessageText`, `lineCount`, `invoiceCount`, `netAmount`, `matchedOn`, `candidateSourcePriority`, `lineRoleSuggestion`, `positiveSignals`, `negativeSignals`, `recommendedDecision`, `ambiguityReason` and `risk`.
 
 ## Product Family Candidates
 
@@ -221,6 +224,8 @@ Returns `candidates[]` with:
 - `candidateSetId`
 - `candidateSetKind`
 - `chargecodeKey`
+- `chargecodeDescription`
+- `billMessageText`
 - `predicate`
 - `productcatalogDescriptions[]`
 - `bundleOfferCaptions[]`
@@ -232,7 +237,8 @@ Returns `candidates[]` with:
 - `positiveAmount`
 - `negativeAmount`
 - `netAmount`
-- `lineRoleSuggestion`: `direct_product_charge | discount | different_variant | plan_with_benefit | context_only | unknown`
+- `candidateSourcePriority`: `chargecode_description | bill_message_text | productcatalog_description | bundle_caption | catalog_alias | inferred_chargecode`
+- `lineRoleSuggestion`: `direct_product_charge | discount | different_variant | plan_with_benefit | context_only | sva_ambiguous | chargecode_description_match | unknown`
 - `suggestedDecision`: `include | pending | exclude`
 - `positiveSignals[]`
 - `negativeSignals[]`

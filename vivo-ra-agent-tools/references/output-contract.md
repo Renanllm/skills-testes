@@ -2,7 +2,7 @@
 
 Retorne um unico objeto JSON. Nao inclua texto fora do JSON.
 
-O envelope externo deve usar os nomes de campo em portugues declarados no output format do workflow. As chaves tecnicas da DSL v0.3 devem ficar preservadas dentro dos campos JSON serializados, como `rule_draft_json`, `calculation_json`, `support_json` e `predicado_final_json`.
+O envelope externo deve usar os nomes de campo em portugues declarados no output format do workflow. As chaves tecnicas da DSL v0.5 devem ficar preservadas dentro dos campos JSON serializados, como `rule_draft_json`, `calculation_json`, `support_json`, `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `predicado_final_json`.
 
 ```json
 {
@@ -39,11 +39,17 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
             "rule_draft_json": "{\"ruleName\":\"...\",\"calculation\":{\"kind\":\"no_charge\"}}",
             "calculation_json": "{\"kind\":\"no_charge\",\"amountField\":\"charge_total_amount\"}",
             "support_json": "{\"confrontabilityStatus\":\"confrontable_deterministic\",\"unsupportedReasons\":[]}",
+            "chargecode_candidates_json": "[{\"chargecodeKey\":\"RMVIVORECADM\",\"chargecodeDescription\":\"Vivo Recado\",\"decision\":\"include\",\"sourcePriority\":\"chargecode_description\"}]",
+            "disambiguation_json": "{\"missingDisambiguators\":[\"crm_product_id\"],\"requiredCrmChecks\":[\"crm_product_id\"],\"rationale\":\"A fatura nao informa o ID CRM do produto contratado.\"}",
+            "stacking_json": "{\"stackingPolicy\":\"requires_manual_review\",\"competingRulePolicy\":\"highest_expected_amount_for_underbilling\",\"rationale\":\"Mesmo chargecode pode ter mais de uma regra comercial.\"}",
+            "required_crm_checks": ["crm_product_id", "service_id", "activation_date", "region"],
             "predicado_final_json": "{\"chargecodeKeyIn\":[\"RMVIVORECADM\"]}",
             "candidate_sets_resumo": [
                 {
                     "candidate_set_id": "cand-chargecode-RMEXAMPLE001",
                     "decisao": "include | exclude | pending",
+                    "candidate_source_priority": "chargecode_description | bill_message_text | productcatalog_description | bundle_caption | catalog_alias | inferred_chargecode",
+                    "line_role": "direct_product_charge | plan_with_benefit | discount | different_variant | context_only | sva_ambiguous | chargecode_description_match | unknown",
                     "motivo": "Racional curto em portugues.",
                     "billing_context_json": "{\"chargecode_keys\":[\"RMEXAMPLE001\"],\"productcatalog_descriptions\":[\"Example Product\"]}"
                 }
@@ -96,8 +102,10 @@ O formato preferencial para o workflow e `billing_context_json` como string JSON
 {
     "candidate_set_id": "cand-chargecode-RMEXAMPLE001",
     "decisao": "include | exclude | pending",
+    "candidate_source_priority": "chargecode_description",
+    "line_role": "direct_product_charge",
     "motivo": "Racional curto em portugues.",
-    "billing_context_json": "{\"candidate_set_kind\":\"chargecode_key\",\"predicate\":{\"chargecodeKeyIn\":[\"RMEXAMPLE001\"]},\"chargecode_keys\":[\"RMEXAMPLE001\"],\"productcatalog_keys\":[\"1234567890\"],\"productcatalog_descriptions\":[\"Example Product\"],\"bundle_offer_captions\":[\"EXAMPLE BUNDLE\"],\"line_count\":10,\"invoice_count\":8,\"customer_count\":8,\"net_amount\":239,\"positive_signals\":[\"chargecode_token_match\"],\"negative_signals\":[],\"recommended_decision\":\"include\",\"source_tools\":[\"POST /agent-tools/billing/candidate-discovery\"]}"
+    "billing_context_json": "{\"candidate_set_kind\":\"chargecode_key\",\"predicate\":{\"chargecodeKeyIn\":[\"RMEXAMPLE001\"]},\"chargecode_keys\":[\"RMEXAMPLE001\"],\"chargecode_descriptions\":[\"Example Product\"],\"bill_message_texts\":[\"Example Product\"],\"productcatalog_keys\":[\"1234567890\"],\"productcatalog_descriptions\":[\"Example Product\"],\"bundle_offer_captions\":[\"EXAMPLE BUNDLE\"],\"line_count\":10,\"invoice_count\":8,\"customer_count\":8,\"net_amount\":239,\"positive_signals\":[\"exact_chargecode_description\"],\"negative_signals\":[],\"matched_on\":{\"chargecodeDescription\":true,\"billMessageText\":false,\"productcatalogDescription\":true,\"bundleCaption\":false,\"expectedAmount\":false},\"recommended_decision\":\"include\",\"source_tools\":[\"POST /agent-tools/billing/candidate-discovery\"]}"
 }
 ```
 
@@ -110,6 +118,8 @@ O JSON serializado em `billing_context_json` deve conter, quando disponivel:
         "chargecodeKeyIn": ["RMEXAMPLE001"]
     },
     "chargecode_keys": ["RMEXAMPLE001"],
+    "chargecode_descriptions": ["Example Product"],
+    "bill_message_texts": ["Example Product"],
     "productcatalog_keys": ["1234567890"],
     "productcatalog_descriptions": ["Example Product"],
     "bundle_offer_captions": ["EXAMPLE BUNDLE"],
@@ -122,12 +132,17 @@ O JSON serializado em `billing_context_json` deve conter, quando disponivel:
     "positive_signals": ["chargecode_token_match", "product_description_match"],
     "negative_signals": [],
     "matched_on": {
+        "chargecodeDescription": true,
+        "billMessageText": false,
         "chargecodeKey": true,
         "productcatalogDescription": true,
-        "bundleOfferCaption": false
+        "bundleOfferCaption": false,
+        "expectedAmount": false
     },
+    "candidate_source_priority": "chargecode_description",
     "recommended_decision": "include",
-    "line_role_suggestion": "direct_product_charge | discount | different_variant | plan_with_benefit | context_only | unknown",
+    "line_role_suggestion": "direct_product_charge | discount | different_variant | plan_with_benefit | context_only | sva_ambiguous | chargecode_description_match | unknown",
+    "ambiguity_reason": null,
     "source_tools": [
         "POST /agent-tools/billing/candidate-discovery",
         "POST /agent-tools/billing/product-family-candidates",
@@ -148,6 +163,8 @@ Formato objeto equivalente, quando suportado:
             "chargecodeKeyIn": ["RMEXAMPLE001"]
         },
         "chargecode_keys": ["RMEXAMPLE001"],
+        "chargecode_descriptions": ["Example Product"],
+        "bill_message_texts": ["Example Product"],
         "productcatalog_keys": ["1234567890"],
         "productcatalog_descriptions": ["Example Product"],
         "bundle_offer_captions": ["EXAMPLE BUNDLE"],
@@ -160,10 +177,14 @@ Formato objeto equivalente, quando suportado:
         "positive_signals": ["chargecode_token_match", "product_description_match"],
         "negative_signals": [],
         "matched_on": {
+            "chargecodeDescription": true,
+            "billMessageText": false,
             "chargecodeKey": true,
             "productcatalogDescription": true,
-            "bundleOfferCaption": false
+            "bundleOfferCaption": false,
+            "expectedAmount": false
         },
+        "candidate_source_priority": "chargecode_description",
         "recommended_decision": "include",
         "source_tools": [
             "POST /agent-tools/billing/candidate-discovery",
@@ -188,6 +209,8 @@ Antes de retornar:
 5. Toda regra financeira confrontavel deve carregar a vigencia do dossie em `valid_from`/`valid_to` no envelope e em `effectiveFrom`/`effectiveTo` dentro de `rule_draft_json`. Use `null` para data fim ausente.
 6. Todo predicado monetario final deve incluir `chargecodeKeyIn` ou `billingLineIdentityIn[].chargecodeKey`.
 7. Todo candidato amplo deve estar como `include`, `exclude` ou `pending`.
-8. Toda declaracao monetaria sem suporte deterministico deve aparecer em `itens_mapeados_nao_suportados` ou em `regras_financeiras` com `status_confrontabilidade` nao deterministico.
-9. Toda falha de tool deve aparecer em `status: "blocked"` ou `perguntas_abertas_globais`.
-10. Nenhum campo deve conter o bearer token.
+8. Todo candidato deve preservar `candidate_source_priority`, `line_role`, `billing_context_json`, `matched_on`, sinais positivos/negativos e racional.
+9. Toda regra deve preservar `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `required_crm_checks` quando esses dados forem conhecidos ou quando faltarem dados externos.
+10. Toda declaracao monetaria sem suporte deterministico deve aparecer em `itens_mapeados_nao_suportados` ou em `regras_financeiras` com `status_confrontabilidade` nao deterministico.
+11. Toda falha de tool deve aparecer em `status: "blocked"` ou `perguntas_abertas_globais`.
+12. Nenhum campo deve conter o bearer token.

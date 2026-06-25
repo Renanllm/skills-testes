@@ -1,4 +1,4 @@
-# Rule DSL v0.3
+# Rule DSL v0.5
 
 Represent dossier statements that are monetary, invoice-confrontable, or intentionally mapped as unsupported.
 
@@ -39,10 +39,22 @@ When the dossier is unclear, prefer invoice-line `c_effectivedate` for audit mat
     "effectiveFrom": "YYYY-MM-DD start date from dossier",
     "effectiveTo": "YYYY-MM-DD end date from dossier, or null when open-ended",
     "candidatePolicy": {
-        "discoveryHints": ["product description", "bundle", "inferred chargecode"],
+        "discoveryHints": ["product name", "product family", "variant names"],
+        "candidateSourcePriority": ["chargecode_description", "bill_message_text", "productcatalog_description", "bundle_caption"],
         "mustResolveTo": "chargecode_key_or_line_identity",
         "allowHighRecall": true
     },
+    "chargecodeCandidates": [
+        {
+            "chargecodeKey": "RMEXAMPLE001",
+            "chargecodeDescription": "Descricao do chargecode",
+            "billMessageText": "Texto de fatura quando existir",
+            "decision": "include | exclude | pending",
+            "lineRole": "direct_product_charge | plan_with_benefit | discount | different_variant | context_only | sva_ambiguous | chargecode_description_match | unknown",
+            "sourcePriority": "chargecode_description | bill_message_text | productcatalog_description | bundle_caption | catalog_alias | inferred_chargecode",
+            "rationale": "Racional curto em portugues brasileiro"
+        }
+    ],
     "predicate": {
         "chargecodeKeyIn": ["preferred final identifiers"],
         "billingLineIdentityIn": [
@@ -72,6 +84,17 @@ When the dossier is unclear, prefer invoice-line `c_effectivedate` for audit mat
         "confrontabilityStatus": "confrontable_deterministic | confrontable_after_mapping | needs_agent_qualification | needs_mapping | needs_usage_quantity | needs_reference_price | needs_crm | needs_subscription_event | needs_entitlement_inventory | needs_review | not_monetary | not_supported_yet | blocked",
         "unsupportedReasons": [],
         "requiredExternalData": []
+    },
+    "disambiguation": {
+        "missingDisambiguators": ["crm_product_id", "service_id", "activation_date", "region"],
+        "requiredCrmChecks": ["crm_product_id", "service_id"],
+        "rationale": "Explique quais dados externos faltam para confirmar a regra neste chargecode."
+    },
+    "requiredCrmChecks": ["crm_product_id", "service_id", "activation_date", "region"],
+    "stacking": {
+        "stackingPolicy": "exclusive | stackable | cancels_lower_priority | requires_manual_review",
+        "competingRulePolicy": "highest_expected_amount_for_underbilling | explicit_priority | not_applicable",
+        "rationale": "Explique como tratar concorrencia de regras no mesmo chargecode."
     },
     "precedence": {
         "priority": 100,
@@ -139,7 +162,9 @@ If required columns or external data are missing, do not force a deterministic r
 
 ## Candidate Predicate Rules
 
-The agent can use product names, descriptions, bundles and productcatalog keys to find candidates.
+The agent must start candidate discovery with product/family names against `chargecode_description` and `bill_message_text`. Then use `productcatalog_description`, bundle captions, catalog aliases and productcatalog keys to qualify the role of the line.
+
+Preserve every considered candidate in `chargecodeCandidates` and in `candidate_sets_resumo`. Include the source priority, line role, matched fields, positive/negative signals, ambiguity reason and rationale.
 
 For final monetary audit, the predicate must resolve to:
 
@@ -149,6 +174,8 @@ For final monetary audit, the predicate must resolve to:
 Do not return `descriptionContains`, `productcatalogKeyIn`, or `bundleOfferCaptionIn` as the only final monetary predicate. Keep them as candidates and mark the rule `confrontable_after_mapping`, `needs_mapping`, or `needs_agent_qualification`.
 
 Never use expected price, billed amount, `netAmount`, `minAmount`, or `maxAmount` to select candidates.
+
+If the same chargecode can have more than one monetary rule, do not discard the rule. Fill `disambiguation`, `requiredCrmChecks` and `stacking` so the deterministic audit can later explain whether it used explicit priority, highest expected amount for underbilling, or manual review.
 
 ## Financial Impact Kinds
 
