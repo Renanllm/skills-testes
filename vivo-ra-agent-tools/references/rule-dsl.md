@@ -12,7 +12,9 @@ Other invoice fields such as usage quantity, duration, volume, free events, dail
 
 ## Date Handling
 
-When the dossier provides a validity period, copy it to `effectiveFrom` and `effectiveTo`.
+When the dossier provides a validity period, copy it to `effectiveFrom` and `effectiveTo` inside `rule_draft_json`.
+
+For every monetary rule that can become `confrontable_deterministic`, include `effectiveFrom` when the dossier gives a start date. Use `effectiveTo: null` when the dossier has no explicit end date. Do not keep the date only in tool calls or free-text rationale; it must be persisted in the rule draft.
 
 When the dossier is unclear, prefer invoice-line `c_effectivedate` for audit matching and mark the assumption in `openQuestions` or `assumptions`. Use `period_start_date` and `period_end_date` when the rule explicitly talks about service period, prorata, or billed days. Do not invent a date window.
 
@@ -34,6 +36,8 @@ When the dossier is unclear, prefer invoice-line `c_effectivedate` for audit mat
         "impactKind": "customer_credit_risk | recovery_opportunity | validation_only",
         "amountField": "c.chargetotalamount"
     },
+    "effectiveFrom": "YYYY-MM-DD start date from dossier",
+    "effectiveTo": "YYYY-MM-DD end date from dossier, or null when open-ended",
     "candidatePolicy": {
         "discoveryHints": ["product description", "bundle", "inferred chargecode"],
         "mustResolveTo": "chargecode_key_or_line_identity",

@@ -30,6 +30,8 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
             "alvo_tipo": "product | variant | bundle | plan | offer | unknown",
             "escopo_afetado": "single_charge_line | product | bundle | plan | account | unknown",
             "campo_monetario": "c.chargetotalamount",
+            "valid_from": "YYYY-MM-DD ou null",
+            "valid_to": "YYYY-MM-DD ou null",
             "comportamento_esperado": "",
             "calculation_kind": "fixed_amount | no_charge | discount_amount | discount_percent | usage_event_tariff | usage_duration_tariff | usage_volume_tariff | daily_rate | prorata_by_period | bundle_component_sum | forbidden_charge | presence_required | custom_logic",
             "required_columns": ["charge_total_amount"],
@@ -183,8 +185,9 @@ Antes de retornar:
 2. Toda regra financeira deve ter `financialImpact.monetary: true` dentro de `rule_draft_json`.
 3. Toda regra financeira deve ter `calculation.kind`, `calculation.requiredColumns` e `support.confrontabilityStatus`.
 4. Toda regra `confrontable_deterministic` deve ter predicado executavel.
-5. Todo predicado monetario final deve incluir `chargecodeKeyIn` ou `billingLineIdentityIn[].chargecodeKey`.
-6. Todo candidato amplo deve estar como `include`, `exclude` ou `pending`.
-7. Toda declaracao monetaria sem suporte deterministico deve aparecer em `itens_mapeados_nao_suportados` ou em `regras_financeiras` com `status_confrontabilidade` nao deterministico.
-8. Toda falha de tool deve aparecer em `status: "blocked"` ou `perguntas_abertas_globais`.
-9. Nenhum campo deve conter o bearer token.
+5. Toda regra financeira confrontavel deve carregar a vigencia do dossie em `valid_from`/`valid_to` no envelope e em `effectiveFrom`/`effectiveTo` dentro de `rule_draft_json`. Use `null` para data fim ausente.
+6. Todo predicado monetario final deve incluir `chargecodeKeyIn` ou `billingLineIdentityIn[].chargecodeKey`.
+7. Todo candidato amplo deve estar como `include`, `exclude` ou `pending`.
+8. Toda declaracao monetaria sem suporte deterministico deve aparecer em `itens_mapeados_nao_suportados` ou em `regras_financeiras` com `status_confrontabilidade` nao deterministico.
+9. Toda falha de tool deve aparecer em `status: "blocked"` ou `perguntas_abertas_globais`.
+10. Nenhum campo deve conter o bearer token.

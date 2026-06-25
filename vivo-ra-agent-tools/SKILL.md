@@ -63,6 +63,7 @@ Leia `references/non-confrontable-items.md` quando o dossie trouxer instrucoes o
 - Nao retorne candidato ponderado sem `billingContext` estruturado. A decisao do agente precisa carregar o contexto de fatura usado para include, exclude ou pending.
 - Nao use `expected.amount`, preco alvo, valor faturado, `netAmount` ou janelas de valor para selecionar candidatos. Esses valores entram na logica de regra/auditoria depois que as linhas candidatas forem encontradas por descricao/chargecode.
 - Trate `c.chargetotalamount` como campo monetario oficial da POC.
+- Quando o dossie trouxer data de vigencia, toda regra monetaria confrontavel deve carregar `effectiveFrom` e `effectiveTo` dentro de `rule_draft_json`, e `valid_from` e `valid_to` no envelope final. Use `null` para data fim ausente.
 - Apenas regras com `support.confrontabilityStatus: "confrontable_deterministic"` podem gerar impacto financeiro. Lacunas de CRM, evento de assinatura, entitlement, mapping, quantidade de uso e preco de referencia devem ser explicitas.
 
 ## Disciplina de Saida

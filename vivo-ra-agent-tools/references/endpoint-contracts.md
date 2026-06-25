@@ -345,6 +345,8 @@ Body:
             "impactKind": "customer_credit_risk",
             "amountField": "c.chargetotalamount"
         },
+        "effectiveFrom": "2025-07-01",
+        "effectiveTo": null,
         "predicate": {
             "chargecodeKeyIn": ["RMVIVORECADM"]
         },
