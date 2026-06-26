@@ -23,6 +23,7 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
     },
     "regras_financeiras": [
         {
+            "source_claim_id": "claim-001",
             "nome_regra": "",
             "tipo_regra": "fixed_price | no_charge | discount | usage_tariff | prorata | bundle_composition | presence_rule | free_period | exclusion | migration_price | other_monetary",
             "status_confrontabilidade": "confrontable_deterministic | confrontable_after_mapping | needs_agent_qualification | needs_mapping | needs_usage_quantity | needs_reference_price | needs_crm | needs_subscription_event | needs_entitlement_inventory | needs_review | not_supported_yet | blocked",
@@ -63,6 +64,7 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
     ],
     "itens_mapeados_nao_suportados": [
         {
+            "source_claim_id": "claim-002",
             "titulo": "",
             "status_suporte": "needs_crm | needs_subscription_event | needs_entitlement_inventory | needs_usage_quantity | needs_reference_price | not_supported_yet | needs_mapping | not_monetary",
             "unsupported_reasons": [],
@@ -202,15 +204,18 @@ Campos indisponiveis podem ser arrays vazios ou `null`, mas `billing_context_jso
 
 Antes de retornar:
 
-1. Toda regra financeira deve ter evidencia.
-2. Toda regra financeira deve ter `financialImpact.monetary: true` dentro de `rule_draft_json`.
-3. Toda regra financeira deve ter `calculation.kind`, `calculation.requiredColumns` e `support.confrontabilityStatus`.
-4. Toda regra `confrontable_deterministic` deve ter predicado executavel.
-5. Toda regra financeira confrontavel deve carregar a vigencia do dossie em `valid_from`/`valid_to` no envelope e em `effectiveFrom`/`effectiveTo` dentro de `rule_draft_json`. Use `null` para data fim ausente.
-6. Todo predicado monetario final deve incluir `chargecodeKeyIn` ou `billingLineIdentityIn[].chargecodeKey`.
-7. Todo candidato amplo deve estar como `include`, `exclude` ou `pending`.
-8. Todo candidato deve preservar `candidate_source_priority`, `line_role`, `billing_context_json`, `matched_on`, sinais positivos/negativos e racional.
-9. Toda regra deve preservar `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `required_crm_checks` quando esses dados forem conhecidos ou quando faltarem dados externos.
-10. Toda declaracao monetaria sem suporte deterministico deve aparecer em `itens_mapeados_nao_suportados` ou em `regras_financeiras` com `status_confrontabilidade` nao deterministico.
-11. Toda falha de tool deve aparecer em `status: "blocked"` ou `perguntas_abertas_globais`.
-12. Nenhum campo deve conter o bearer token.
+1. Toda regra financeira deve ter `source_claim_id` apontando para uma declaracao monetaria do dossie.
+2. Nenhuma regra financeira pode existir apenas porque uma tool retornou um candidato de billing. Candidatos qualificam uma regra existente; nao criam regra nova.
+3. Toda regra financeira deve ter evidencia.
+4. Toda regra financeira deve ter `financialImpact.monetary: true` dentro de `rule_draft_json`.
+5. Toda regra financeira deve ter `calculation.kind`, `calculation.requiredColumns` e `support.confrontabilityStatus`.
+6. Toda regra `confrontable_deterministic` deve ter predicado executavel.
+7. Toda regra financeira confrontavel deve carregar a vigencia do dossie em `valid_from`/`valid_to` no envelope e em `effectiveFrom`/`effectiveTo` dentro de `rule_draft_json`. Use `null` para data fim ausente.
+8. Todo predicado monetario final deve incluir `chargecodeKeyIn` ou `billingLineIdentityIn[].chargecodeKey`.
+9. Todo candidato amplo deve estar como `include`, `exclude` ou `pending`.
+10. Todo candidato deve preservar `candidate_source_priority`, `line_role`, `billing_context_json`, `matched_on`, sinais positivos/negativos e racional.
+11. Toda regra deve preservar `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `required_crm_checks` quando esses dados forem conhecidos ou quando faltarem dados externos.
+12. Toda declaracao monetaria sem suporte deterministico deve aparecer em `itens_mapeados_nao_suportados` ou em `regras_financeiras` com `status_confrontabilidade` nao deterministico.
+13. Todo item em `itens_mapeados_nao_suportados` derivado de declaracao monetaria deve preservar `source_claim_id`.
+14. Toda falha de tool deve aparecer em `status: "blocked"` ou `perguntas_abertas_globais`.
+15. Nenhum campo deve conter o bearer token.

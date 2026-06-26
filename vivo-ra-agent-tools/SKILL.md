@@ -50,6 +50,11 @@ Leia `references/non-confrontable-items.md` quando o dossie trouxer instrucoes o
 
 ## Regras Duras
 
+- Regra nasce exclusivamente de uma declaracao monetaria, precificacao, desconto, gratuidade, tarifa, presenca/ausencia monetaria ou condicao financeira explicitamente presente no dossie. Candidato de billing, chargecode, product description ou bundle encontrado nas tools nunca cria uma regra nova sozinho.
+- Antes de criar `regras_financeiras`, enumere mentalmente as declaracoes monetarias do dossie. Cada regra financeira deve corresponder a uma dessas declaracoes e preencher `source_claim_id` com um identificador estavel dessa declaracao, por exemplo `claim-001`.
+- Crie uma regra separada apenas quando mudar o comportamento economico: valor esperado, formula de calculo, vigencia, condicao de elegibilidade, prioridade/stacking ou alvo comercial explicitamente declarado no dossie. Nao separe regra apenas porque encontrou outro candidato, bundle, caption ou chargecode.
+- Se um candidato parecer produto/variante/bundle relacionado, mas o dossie nao declarar valor, formula ou condicao financeira propria para ele, mantenha-o como `pending` ou `exclude` em `candidate_sets_resumo`, ou como `itens_mapeados_nao_suportados` vinculado ao claim original. Nao promova esse candidato para `regras_financeiras`.
+- Itens em `itens_mapeados_nao_suportados` sao lacunas/politicas extraidas para rastreabilidade. Eles devem ter `source_claim_id` quando derivarem de uma declaracao monetaria, mas nao representam regra auditavel nem predicado final.
 - Nao varra todas as linhas de fatura. Use candidate discovery, clusters, amostras e validadores.
 - Nao calcule impacto financeiro final em toda a base de faturas. O motor deterministico faz isso depois.
 - Nao persista nem diga que uma regra esta aprovada. Retorne rascunho e qualificacao para revisao.
