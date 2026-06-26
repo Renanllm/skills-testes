@@ -85,6 +85,23 @@ When the dossier is unclear, prefer invoice-line `c_effectivedate` for audit mat
         "unsupportedReasons": [],
         "requiredExternalData": []
     },
+    "externalConditions": [
+        {
+            "field": "crm_product_id | service_id | activation_date | region | customer_segment | channel | subscription_event",
+            "operator": "equals | in | not_in | gt | gte | lt | lte | between | exists | not_exists",
+            "value": "single value when known",
+            "values": ["multiple values when applicable"],
+            "source": "dossier | crm | billing | inferred | unknown",
+            "requiredForAudit": true,
+            "evidence": {
+                "source": "dossier file name",
+                "page": 1,
+                "quote": "short supporting excerpt when extracted from the dossier"
+            },
+            "rationale": "Explique se a condicao foi extraida do dossie ou se precisa ser consultada externamente.",
+            "confidence": 0.8
+        }
+    ],
     "disambiguation": {
         "missingDisambiguators": ["crm_product_id", "service_id", "activation_date", "region"],
         "requiredCrmChecks": ["crm_product_id", "service_id"],
@@ -176,6 +193,20 @@ Do not return `descriptionContains`, `productcatalogKeyIn`, or `bundleOfferCapti
 Never use expected price, billed amount, `netAmount`, `minAmount`, or `maxAmount` to select candidates.
 
 If the same chargecode can have more than one monetary rule, do not discard the rule. Fill `disambiguation`, `requiredCrmChecks` and `stacking` so the deterministic audit can later explain whether it used explicit priority, highest expected amount for underbilling, or manual review.
+
+## External Conditions
+
+Use `externalConditions` to preserve all rule-level conditions that are not simple billing predicates.
+
+Examples:
+
+- `crm_product_id`: product/service identifier cited by the dossier or required to disambiguate CRM entitlement.
+- `service_id`: service identifier cited by the dossier or required externally.
+- `activation_date`: customer activation/subscription/first-charge date. If the dossier only says the rule depends on activation timing but does not provide the customer date, set `source: "crm"` and `requiredForAudit: true`.
+- `region`: praca, regional or geographic applicability. If the dossier provides the region, use `source: "dossier"` with `value` or `values` and evidence. If the region is only needed per customer/account, use `source: "crm"` and `requiredForAudit: true`.
+- `customer_segment`, `channel`, `subscription_event`: eligibility or journey conditions that can affect which rule applies.
+
+Do not invent values. If a value is not explicit in the dossier, keep `value`/`values` null or omitted, set the correct `source`, and explain the dependency in `rationale`.
 
 ## Financial Impact Kinds
 

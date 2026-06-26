@@ -2,7 +2,7 @@
 
 Retorne um unico objeto JSON. Nao inclua texto fora do JSON.
 
-O envelope externo deve usar os nomes de campo em portugues declarados no output format do workflow. As chaves tecnicas da DSL v0.5 devem ficar preservadas dentro dos campos JSON serializados, como `rule_draft_json`, `calculation_json`, `support_json`, `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `predicado_final_json`.
+O envelope externo deve usar os nomes de campo em portugues declarados no output format do workflow. As chaves tecnicas da DSL v0.5 devem ficar preservadas dentro dos campos JSON serializados, como `rule_draft_json`, `calculation_json`, `support_json`, `chargecode_candidates_json`, `external_conditions_json`, `disambiguation_json`, `stacking_json` e `predicado_final_json`.
 
 ```json
 {
@@ -41,6 +41,7 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
             "calculation_json": "{\"kind\":\"no_charge\",\"amountField\":\"charge_total_amount\"}",
             "support_json": "{\"confrontabilityStatus\":\"confrontable_deterministic\",\"unsupportedReasons\":[]}",
             "chargecode_candidates_json": "[{\"chargecodeKey\":\"RMVIVORECADM\",\"chargecodeDescription\":\"Vivo Recado\",\"decision\":\"include\",\"sourcePriority\":\"chargecode_description\"}]",
+            "external_conditions_json": "[{\"field\":\"activation_date\",\"operator\":\"exists\",\"source\":\"crm\",\"requiredForAudit\":true,\"rationale\":\"A fatura nao traz a data de ativacao da assinatura.\"},{\"field\":\"region\",\"operator\":\"in\",\"values\":[\"SP\",\"RJ\"],\"source\":\"dossier\",\"evidence\":{\"source\":\"20131.pdf\",\"page\":3,\"quote\":\"Valido para pracas SP e RJ.\"}}]",
             "disambiguation_json": "{\"missingDisambiguators\":[\"crm_product_id\"],\"requiredCrmChecks\":[\"crm_product_id\"],\"rationale\":\"A fatura nao informa o ID CRM do produto contratado.\"}",
             "stacking_json": "{\"stackingPolicy\":\"requires_manual_review\",\"competingRulePolicy\":\"highest_expected_amount_for_underbilling\",\"rationale\":\"Mesmo chargecode pode ter mais de uma regra comercial.\"}",
             "required_crm_checks": ["crm_product_id", "service_id", "activation_date", "region"],
@@ -214,7 +215,7 @@ Antes de retornar:
 8. Todo predicado monetario final deve incluir `chargecodeKeyIn` ou `billingLineIdentityIn[].chargecodeKey`.
 9. Todo candidato amplo deve estar como `include`, `exclude` ou `pending`.
 10. Todo candidato deve preservar `candidate_source_priority`, `line_role`, `billing_context_json`, `matched_on`, sinais positivos/negativos e racional.
-11. Toda regra deve preservar `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `required_crm_checks` quando esses dados forem conhecidos ou quando faltarem dados externos.
+11. Toda regra deve preservar `chargecode_candidates_json`, `external_conditions_json`, `disambiguation_json`, `stacking_json` e `required_crm_checks` quando esses dados forem conhecidos ou quando faltarem dados externos.
 12. Toda declaracao monetaria sem suporte deterministico deve aparecer em `itens_mapeados_nao_suportados` ou em `regras_financeiras` com `status_confrontabilidade` nao deterministico.
 13. Todo item em `itens_mapeados_nao_suportados` derivado de declaracao monetaria deve preservar `source_claim_id`.
 14. Toda falha de tool deve aparecer em `status: "blocked"` ou `perguntas_abertas_globais`.

@@ -36,7 +36,7 @@ Leia `references/non-confrontable-items.md` quando o dossie trouxer instrucoes o
 3. Chame `GET /agent-tools/rule-dsl/contract`.
 4. Se o contrato retornado nao for compativel com `v0.5`, pare e retorne `status: "blocked"` com `contract_mismatch` no resumo da tool. Nao tente adaptar uma regra nova para contrato antigo.
 5. Para cada regra monetaria ou confrontavel, chame `POST /agent-tools/catalog/search` usando o alvo comercial e tipos provaveis de entidade.
-6. Crie um rascunho de regra com alvo, comportamento esperado, evidencias, datas e incertezas.
+6. Crie um rascunho de regra com alvo, comportamento esperado, evidencias, datas, condicoes externas e incertezas.
 7. Chame `POST /agent-tools/billing/candidate-discovery` com `strategy: "high_recall"`.
 8. Quando a regra afetar uma familia/plano de produto, reprecificacao, gratuidade ampla, ou quando o dossie disser "todos os canais", "todos os IDs", "todos os fluxos" ou equivalente, chame `POST /agent-tools/billing/product-family-candidates` antes de fechar o predicado final.
 9. Escolha candidatos usando primeiro `chargecode_description` e `bill_message_text`; depois use `productcatalog_description`, papel da linha, contexto de bundle e chargecode inferido para qualificar. Nao use preco esperado, valor faturado ou janelas de valor como criterio de descoberta.
@@ -67,6 +67,8 @@ Leia `references/non-confrontable-items.md` quando o dossie trouxer instrucoes o
 - Se candidatos forem amplos demais, mantenha-os nos candidate sets, mas exclua ou marque como pendente na qualificacao.
 - Nao retorne candidato ponderado sem `billingContext` estruturado. A decisao do agente precisa carregar o contexto de fatura usado para include, exclude ou pending.
 - Para toda regra financeira, preencha `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `required_crm_checks` quando houver candidatos ou dados externos faltantes. Se nao houver concorrencia ou checks externos, use arrays vazios e explique `not_applicable`.
+- Para toda regra financeira, preencha `externalConditions` dentro de `rule_draft_json` e `external_conditions_json` no envelope. Use esse bloco para `crm_product_id`, `service_id`, `activation_date`, `region`, `customer_segment`, `channel` e outras condicoes de elegibilidade, mesmo quando o valor nao estiver no dossie.
+- Em `externalConditions`, diferencie condicoes extraidas do dossie (`source: "dossier"`, com `value`/`values` e evidencia) de dados que precisam ser consultados em CRM ou outro sistema (`source: "crm"`, `requiredForAudit: true`, com racional). Nao invente valores ausentes no dossie.
 - Nao use `expected.amount`, preco alvo, valor faturado, `netAmount` ou janelas de valor para selecionar candidatos. Esses valores entram na logica de regra/auditoria depois que as linhas candidatas forem encontradas por descricao/chargecode.
 - Trate `c.chargetotalamount` como campo monetario oficial da POC.
 - Quando o dossie trouxer data de vigencia, toda regra monetaria confrontavel deve carregar `effectiveFrom` e `effectiveTo` dentro de `rule_draft_json`, e `valid_from` e `valid_to` no envelope final. Use `null` para data fim ausente.
