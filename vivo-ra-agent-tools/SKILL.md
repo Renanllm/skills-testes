@@ -46,8 +46,9 @@ Leia `references/non-confrontable-items.md` quando o dossie trouxer instrucoes o
 13. Chame `POST /agent-tools/billing/qualification-validate` com o predicado final proposto.
 14. Quando a regra depender de elegibilidade por cliente, produto/oferta CRM, bundle CRM, vigencia de contrato, praca/regiao, ativacao, ou quando houver candidatos concorrentes que precisem de contexto de cliente para desambiguar, chame `POST /agent-tools/crm/contracts/search`. Use esses dados como contexto externo disponivel; se o mock nao tiver dados suficientes, preencha `required_crm_checks` e mantenha a ressalva.
 15. Chame `POST /agent-tools/rules/context` para o produto/familia alvo antes de fechar `ruleRelationship`. Use `targetName`, `targetAliases`, `chargecodeKeys`, IDs CRM, bundles e vigencia conhecidos; se tiver uma relacao proposta, envie `proposedRelationship` para validar ciclos. Depois chame `POST /agent-tools/rules/validate` e, quando precisar de detalhe adicional de predicado, `POST /agent-tools/rules/conflicts`. Use as respostas para preencher `ruleSet`, `ruleRelationship`, `stacking` e perguntas abertas quando a prioridade ainda depender de revisao humana.
-16. Opcionalmente chame `POST /agent-tools/audit/preview` apenas para uma pequena amostra. Nao calcule impacto final em toda a base.
-17. Retorne o JSON descrito em `references/output-contract.md`.
+16. Quando houver concorrencia de regras, CRM, bundle, praca/regiao, vigencia de contrato ou elegibilidade pendente, chame `POST /agent-tools/rules/applicability-preview` para validar quais linhas/unidades ficariam `eligible`, `unknown`, `needs_crm` ou `needs_bundle_eligibility`.
+17. Opcionalmente chame `POST /agent-tools/audit/preview` apenas para uma pequena amostra. Nao calcule impacto final em toda a base.
+18. Retorne o JSON descrito em `references/output-contract.md`.
 
 ## Regras Duras
 

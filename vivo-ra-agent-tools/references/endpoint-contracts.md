@@ -435,6 +435,44 @@ Returns:
 
 Use this after candidate qualification and before finalizing `ruleSet`, `ruleRelationship` and `stacking`. Prefer this endpoint over `/rules/existing` when the agent needs precedence context because it expands from matched rules to the whole rule set and validates obvious cycles. Same-chargecode rules can coexist when CRM, bundle, region, effective window or another explicit condition disambiguates them.
 
+## Rule Applicability Preview
+
+```http
+POST /agent-tools/rules/applicability-preview
+```
+
+Body:
+
+```json
+{
+    "billingRuleId": "br-spotify-individual",
+    "ruleSetKey": "product:spotify",
+    "finalPredicateId": "rfp-spotify-individual",
+    "includeCrmContext": true,
+    "limit": 20
+}
+```
+
+Use this after `/rules/context` when a rule set has CRM, bundle or competing-rule ambiguity. The preview does not calculate final money. It selects invoice candidate lines from the rule predicate, respects the rule `auditUnit` (`single_charge_line` or `monthly_charge_group`), consults the CRM mock when requested, and returns the rule that currently applies to each billing unit.
+
+Returns:
+
+- `auditUnit`
+- `rules[]` ordered by priority
+- `applicabilityUnits[]` with invoice line ids, customer/subscriber context, `finalResolvedRuleId`, `crmMatchStatus`, `bundleEligibilityStatus`, `eligibilityStatus`, `applicationBasis`, `rulePath`, and optional `crmContracts`
+- `summary.evaluatedUnitCount`
+- `summary.eligibleUnitCount`
+- `summary.unknownEligibilityUnitCount`
+- `summary.crmMatchedUnitCount`
+- `summary.bundleMatchedUnitCount`
+
+Interpretation:
+
+- `applicationBasis: "crm_confirmed"` or `"bundle_confirmed"` means the mock CRM/bundle data confirms which rule wins.
+- `applicationBasis: "needs_crm"` means the billing line exists, but the rule requires CRM evidence that is missing.
+- `applicationBasis: "needs_bundle_eligibility"` means the line is a candidate, but active bundle eligibility was not proven.
+- `applicationBasis: "billing_only"` means no CRM/bundle condition was required for that rule.
+
 ## Rule Validate
 
 ```http
