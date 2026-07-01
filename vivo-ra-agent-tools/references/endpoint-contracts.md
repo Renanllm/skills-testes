@@ -393,6 +393,48 @@ Use this before closing `ruleSet` and `ruleRelationship`. Query by dossier, targ
 
 Existing rules do not automatically block a new rule. They are context for priority, sibling/default/supersedes relationships, CRM caveats and manual review.
 
+## Rule Context
+
+```http
+POST /agent-tools/rules/context
+```
+
+Body:
+
+```json
+{
+    "targetName": "Spotify Nordeste",
+    "targetAliases": ["Spotify", "Spotify Premium"],
+    "chargecodeKeys": ["RMSPOTIFYVM"],
+    "crmProductIds": ["CRM-SPOTIFY-NORDESTE"],
+    "crmOfferIds": [],
+    "bundleNames": [],
+    "effectiveFrom": "2025-08-18",
+    "effectiveTo": null,
+    "proposedRelationship": {
+        "ruleId": "br-new-rule-if-known",
+        "parentRuleId": "br-existing-default-rule",
+        "relationshipType": "sibling_of",
+        "priorityRank": 80,
+        "conditionJson": {
+            "crmProductIds": ["CRM-SPOTIFY-NORDESTE"]
+        }
+    }
+}
+```
+
+Returns:
+
+- `ruleSetKey`
+- `rules[]` with current rules in the same rule set, expected values, final predicates, chargecodes, CRM/bundle hints and `relationship`
+- `relationships[]` with parent/child, `relationshipType`, `priorityRank`, condition and rationale
+- `conflicts[]` for chargecode overlaps, whether coexistence is allowed and which disambiguators are missing
+- `suggestedPlacement` with recommended `relationshipType`, `priorityRankSuggestion`, options and rationale
+- `validation.isValid` and `validation.errors[]`, including `cycle_detected`
+- `gaps[]`
+
+Use this after candidate qualification and before finalizing `ruleSet`, `ruleRelationship` and `stacking`. Prefer this endpoint over `/rules/existing` when the agent needs precedence context because it expands from matched rules to the whole rule set and validates obvious cycles. Same-chargecode rules can coexist when CRM, bundle, region, effective window or another explicit condition disambiguates them.
+
 ## Rule Validate
 
 ```http

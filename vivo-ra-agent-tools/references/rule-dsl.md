@@ -167,7 +167,7 @@ Every monetary rule must include:
 
 - `ruleSet.key`, grouping rules by product, product family, bundle or plan.
 - `ruleRelationship.relationshipType`, explaining whether this rule is independent, a default, a sibling, a superseder, a fallback, or requires review.
-- Existing-rule context from `/agent-tools/rules/existing` and conflict context from `/agent-tools/rules/conflicts` before finalizing `ruleRelationship`.
+- Existing-rule context from `/agent-tools/rules/context` and conflict context from `/agent-tools/rules/conflicts` before finalizing `ruleRelationship`.
 
 `highest_expected_amount_for_underbilling` is only a fallback for underbilling/recovery when two or more rules can govern the same billing context and CRM/taxonomy cannot disambiguate. Do not use it for customer-credit scenarios or as a universal priority rule.
 
