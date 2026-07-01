@@ -1,6 +1,6 @@
 # Candidate Qualification Playbook
 
-Qualification converts broad candidate sets into a final executable predicate or an explicit gap.
+Qualification converts broad candidate sets into a final executable predicate or an explicit gap. It does not create billing rules; it only qualifies candidates for monetary claims already found in the dossier.
 
 ## Required Inputs
 
@@ -11,6 +11,7 @@ Before qualifying, inspect:
 - sample invoice lines for each ambiguous bucket;
 - catalog entity aliases and relationships when relevant;
 - existing rules and conflicts.
+- CRM mock contracts when eligibility, bundle membership, product/offer CRM IDs, activation date or region can disambiguate the candidate.
 
 Candidate discovery must start with product/family names against `chargecode_description` and `bill_message_text`. Use `productcatalog_description`, bundle context, line identities, catalog aliases and inferred chargecode keys only to qualify the line role and decide include/exclude/pending. Do not use expected price, billed amount, `netAmount`, or amount windows to select candidates. Monetary values are used later to define and audit the rule, after the candidate lines have been found.
 
@@ -75,6 +76,24 @@ If candidate discovery returns bundle neighbors, sibling components, or broad de
 - Include when `productcatalog_description` represents the affected product/plan directly, even if the line appears inside a bundle.
 - Exclude plan parent, discount, broadband, or different-variant lines.
 - Keep context-only bundle hits pending when product description does not identify the affected product.
+- When the dossier says the benefit only applies inside a bundle, put the bundle rule in `externalConditions.bundleEligibility`; do not turn the entire bundle into the final charge predicate unless the dossier says the bundle charge line itself changes.
+
+## Rule Relationships
+
+Before closing qualification for a monetary rule, inspect existing rules and conflicts for the same product, product family, bundle, chargecode or final predicate.
+
+Set `ruleSet.key` to the product/family/bundle grouping that would be used to compare priorities later. Examples: `product:spotify`, `family:disney-plus`, `bundle:vivo-total`.
+
+Set `ruleRelationship.relationshipType` using this discipline:
+
+- `independent`: no meaningful overlap with existing rules or sibling rules in the dossier.
+- `default_for`: baseline rule for a product/family when no more specific condition applies.
+- `sibling_of`: same dossier creates parallel variants, tiers or regions.
+- `supersedes`: dossier explicitly replaces an older rule.
+- `fallback_of`: rule only applies when another condition is absent.
+- `requires_manual_review`: overlap exists, but priority/condition cannot be decided from dossier/tools.
+
+Use `highest_expected_amount_for_underbilling` only as a fallback in `stacking.competingRulePolicy` when the same billing context has competing recovery/underbilling rules and CRM/taxonomy cannot identify the right one. For customer credit or overbilling, leave the conflict explicit for review.
 
 ## Qualification Output Fragment
 

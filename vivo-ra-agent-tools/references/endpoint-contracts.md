@@ -382,7 +382,9 @@ Body:
 }
 ```
 
-Use this to understand if the new rule overlaps with prior rules.
+Use this before closing `ruleSet` and `ruleRelationship`. Query by dossier, target entity ids and status when available; if the final predicate uses chargecodes that are not yet mapped to entity ids, still call this endpoint with the known target context and then call `/agent-tools/rules/conflicts` with the predicate.
+
+Existing rules do not automatically block a new rule. They are context for priority, sibling/default/supersedes relationships, CRM caveats and manual review.
 
 ## Rule Validate
 
@@ -396,6 +398,9 @@ Body:
 {
     "ruleDraft": {
         "ruleName": "Vivo Recado - no charge",
+        "ruleSituation": "executable",
+        "dependencyCodes": [],
+        "situationRationale": "Regra monetaria com predicado final por chargecode.",
         "ruleType": "free_period",
         "target": {
             "entityName": "Vivo Recado",
@@ -426,6 +431,24 @@ Body:
             "unsupportedReasons": [],
             "requiredExternalData": []
         },
+        "externalConditions": {
+            "crm": {
+                "policy": "not_required"
+            },
+            "bundleEligibility": {
+                "policy": "not_required"
+            }
+        },
+        "ruleSet": {
+            "key": "product:vivo-recado",
+            "targetProductName": "Vivo Recado",
+            "targetChargecodes": ["RMVIVORECADM"]
+        },
+        "ruleRelationship": {
+            "relationshipType": "independent",
+            "priorityRank": 100,
+            "rationale": "Sem regra concorrente identificada nas tools."
+        },
         "evidence": []
     }
 }
@@ -452,7 +475,7 @@ Body:
 }
 ```
 
-Use this after rule validation. Conflicts do not always block the rule, but they require precedence reasoning or human review.
+Use this after rule validation. Conflicts do not always block the rule, but they require precedence reasoning or human review. If conflict priority cannot be resolved from dossier, CRM mock or existing-rule metadata, set `ruleRelationship.relationshipType: "requires_manual_review"` and explain the unresolved condition.
 
 ## Audit Preview
 

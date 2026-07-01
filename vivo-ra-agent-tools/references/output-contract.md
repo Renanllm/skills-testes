@@ -2,7 +2,7 @@
 
 Retorne um unico objeto JSON. Nao inclua texto fora do JSON.
 
-O envelope externo deve usar os nomes de campo em portugues declarados no output format do workflow. As chaves tecnicas da DSL v0.5 devem ficar preservadas dentro dos campos JSON serializados, como `rule_draft_json`, `calculation_json`, `support_json`, `chargecode_candidates_json`, `external_conditions_json`, `disambiguation_json`, `stacking_json` e `predicado_final_json`.
+O envelope externo deve usar os nomes de campo em portugues declarados no output format do workflow. As chaves tecnicas da DSL v0.5 devem ficar preservadas dentro dos campos JSON serializados, como `rule_draft_json`, `calculation_json`, `support_json`, `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `predicado_final_json`.
 
 ```json
 {
@@ -25,6 +25,9 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
         {
             "source_claim_id": "claim-001",
             "nome_regra": "",
+            "situacao_regra": "executable | needs_review | not_applicable",
+            "dependency_codes": ["needs_crm", "needs_bundle_eligibility"],
+            "situation_rationale": "Resumo curto da situacao e dependencias.",
             "tipo_regra": "fixed_price | no_charge | discount | usage_tariff | prorata | bundle_composition | presence_rule | free_period | exclusion | migration_price | other_monetary",
             "status_confrontabilidade": "confrontable_deterministic | confrontable_after_mapping | needs_agent_qualification | needs_mapping | needs_usage_quantity | needs_reference_price | needs_crm | needs_subscription_event | needs_entitlement_inventory | needs_review | not_supported_yet | blocked",
             "alvo_nome": "",
@@ -37,11 +40,13 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
             "calculation_kind": "fixed_amount | no_charge | discount_amount | discount_percent | usage_event_tariff | usage_duration_tariff | usage_volume_tariff | daily_rate | prorata_by_period | bundle_component_sum | forbidden_charge | presence_required | custom_logic",
             "required_columns": ["charge_total_amount"],
             "valor_esperado": 0,
-            "rule_draft_json": "{\"ruleName\":\"...\",\"calculation\":{\"kind\":\"no_charge\"}}",
+            "rule_draft_json": "{\"ruleName\":\"...\",\"ruleSituation\":\"executable\",\"dependencyCodes\":[],\"calculation\":{\"kind\":\"no_charge\"},\"ruleSet\":{\"key\":\"product:vivo-recado\"},\"ruleRelationship\":{\"relationshipType\":\"independent\"}}",
             "calculation_json": "{\"kind\":\"no_charge\",\"amountField\":\"charge_total_amount\"}",
             "support_json": "{\"confrontabilityStatus\":\"confrontable_deterministic\",\"unsupportedReasons\":[]}",
+            "external_conditions_json": "{\"crm\":{\"policy\":\"not_required\"},\"bundleEligibility\":{\"policy\":\"not_required\"}}",
+            "rule_set_json": "{\"key\":\"product:vivo-recado\",\"targetProductName\":\"Vivo Recado\",\"targetChargecodes\":[\"RMVIVORECADM\"]}",
+            "rule_relationship_json": "{\"relationshipType\":\"independent\",\"priorityRank\":100,\"rationale\":\"Sem regra concorrente identificada.\"}",
             "chargecode_candidates_json": "[{\"chargecodeKey\":\"RMVIVORECADM\",\"chargecodeDescription\":\"Vivo Recado\",\"decision\":\"include\",\"sourcePriority\":\"chargecode_description\"}]",
-            "external_conditions_json": "[{\"field\":\"activation_date\",\"operator\":\"exists\",\"source\":\"crm\",\"requiredForAudit\":true,\"rationale\":\"A fatura nao traz a data de ativacao da assinatura.\"},{\"field\":\"region\",\"operator\":\"in\",\"values\":[\"SP\",\"RJ\"],\"source\":\"dossier\",\"evidence\":{\"source\":\"20131.pdf\",\"page\":3,\"quote\":\"Valido para pracas SP e RJ.\"}}]",
             "disambiguation_json": "{\"missingDisambiguators\":[\"crm_product_id\"],\"requiredCrmChecks\":[\"crm_product_id\"],\"rationale\":\"A fatura nao informa o ID CRM do produto contratado.\"}",
             "stacking_json": "{\"stackingPolicy\":\"requires_manual_review\",\"competingRulePolicy\":\"highest_expected_amount_for_underbilling\",\"rationale\":\"Mesmo chargecode pode ter mais de uma regra comercial.\"}",
             "required_crm_checks": ["crm_product_id", "service_id", "activation_date", "region"],
@@ -210,13 +215,16 @@ Antes de retornar:
 3. Toda regra financeira deve ter evidencia.
 4. Toda regra financeira deve ter `financialImpact.monetary: true` dentro de `rule_draft_json`.
 5. Toda regra financeira deve ter `calculation.kind`, `calculation.requiredColumns` e `support.confrontabilityStatus`.
-6. Toda regra `confrontable_deterministic` deve ter predicado executavel.
-7. Toda regra financeira confrontavel deve carregar a vigencia do dossie em `valid_from`/`valid_to` no envelope e em `effectiveFrom`/`effectiveTo` dentro de `rule_draft_json`. Use `null` para data fim ausente.
-8. Todo predicado monetario final deve incluir `chargecodeKeyIn` ou `billingLineIdentityIn[].chargecodeKey`.
-9. Todo candidato amplo deve estar como `include`, `exclude` ou `pending`.
-10. Todo candidato deve preservar `candidate_source_priority`, `line_role`, `billing_context_json`, `matched_on`, sinais positivos/negativos e racional.
-11. Toda regra deve preservar `chargecode_candidates_json`, `external_conditions_json`, `disambiguation_json`, `stacking_json` e `required_crm_checks` quando esses dados forem conhecidos ou quando faltarem dados externos.
-12. Toda declaracao monetaria sem suporte deterministico deve aparecer em `itens_mapeados_nao_suportados` ou em `regras_financeiras` com `status_confrontabilidade` nao deterministico.
-13. Todo item em `itens_mapeados_nao_suportados` derivado de declaracao monetaria deve preservar `source_claim_id`.
-14. Toda falha de tool deve aparecer em `status: "blocked"` ou `perguntas_abertas_globais`.
-15. Nenhum campo deve conter o bearer token.
+6. Toda regra financeira deve ter `situacao_regra`, `dependency_codes`, `rule_set_json`, `rule_relationship_json` e os campos equivalentes dentro de `rule_draft_json`.
+7. `situacao_regra` deve ser apenas `executable`, `needs_review` ou `not_applicable`; status tecnicos ficam em `dependency_codes` e `support_json`.
+8. CRM, bundle CRM e elegibilidade de bundle devem aparecer em `external_conditions_json` quando forem necessarios para aplicar ou desambiguar a regra, mas nunca devem criar preco/formula sem declaracao monetaria do dossie.
+9. Toda regra `confrontable_deterministic` deve ter predicado executavel.
+10. Toda regra financeira confrontavel deve carregar a vigencia do dossie em `valid_from`/`valid_to` no envelope e em `effectiveFrom`/`effectiveTo` dentro de `rule_draft_json`. Use `null` para data fim ausente.
+11. Todo predicado monetario final deve incluir `chargecodeKeyIn` ou `billingLineIdentityIn[].chargecodeKey`.
+12. Todo candidato amplo deve estar como `include`, `exclude` ou `pending`.
+13. Todo candidato deve preservar `candidate_source_priority`, `line_role`, `billing_context_json`, `matched_on`, sinais positivos/negativos e racional.
+14. Toda regra deve preservar `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `required_crm_checks` quando esses dados forem conhecidos ou quando faltarem dados externos.
+15. Toda declaracao monetaria sem suporte deterministico deve aparecer em `itens_mapeados_nao_suportados` ou em `regras_financeiras` com `status_confrontabilidade` nao deterministico.
+16. Todo item em `itens_mapeados_nao_suportados` derivado de declaracao monetaria deve preservar `source_claim_id`.
+17. Toda falha de tool deve aparecer em `status: "blocked"` ou `perguntas_abertas_globais`.
+18. Nenhum campo deve conter o bearer token.

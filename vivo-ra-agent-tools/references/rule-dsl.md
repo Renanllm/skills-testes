@@ -23,6 +23,9 @@ When the dossier is unclear, prefer invoice-line `c_effectivedate` for audit mat
 ```json
 {
     "ruleName": "Human-readable rule name",
+    "ruleSituation": "executable | needs_review | not_applicable",
+    "dependencyCodes": ["needs_crm", "needs_bundle_eligibility"],
+    "situationRationale": "Resumo curto da situacao principal e das dependencias.",
     "ruleType": "fixed_price | no_charge | discount | usage_tariff | prorata | bundle_composition | presence_rule | free_period | exclusion | migration_price | other_monetary | not_monetary",
     "dossierCode": "T3DMND0020131",
     "target": {
@@ -85,23 +88,40 @@ When the dossier is unclear, prefer invoice-line `c_effectivedate` for audit mat
         "unsupportedReasons": [],
         "requiredExternalData": []
     },
-    "externalConditions": [
-        {
-            "field": "crm_product_id | service_id | activation_date | region | customer_segment | channel | subscription_event",
-            "operator": "equals | in | not_in | gt | gte | lt | lte | between | exists | not_exists",
-            "value": "single value when known",
-            "values": ["multiple values when applicable"],
-            "source": "dossier | crm | billing | inferred | unknown",
-            "requiredForAudit": true,
-            "evidence": {
-                "source": "dossier file name",
-                "page": 1,
-                "quote": "short supporting excerpt when extracted from the dossier"
-            },
-            "rationale": "Explique se a condicao foi extraida do dossie ou se precisa ser consultada externamente.",
-            "confidence": 0.8
+    "externalConditions": {
+        "crm": {
+            "policy": "not_required | required_to_apply | required_to_disambiguate | optional_context",
+            "crmProductIds": ["0055013624"],
+            "crmOfferIds": ["0055013625"],
+            "bundleCrmIds": ["BUNDLE-CRM-001"],
+            "regions": ["SP"],
+            "activationDatePolicy": "active_on_effective_date | active_on_period_start | relative_to_activation | not_required",
+            "requiredChecks": ["crm_product_id", "activation_date"],
+            "rationale": "Dados CRM qualificam elegibilidade/aplicacao, nao criam preco."
+        },
+        "bundleEligibility": {
+            "policy": "not_required | required_to_apply | optional_context",
+            "bundleNames": ["Vivo Total"],
+            "requiredComponents": ["internet", "tv", "mobile"],
+            "lostEligibilityWhenMissing": ["internet"],
+            "requiredChecks": ["active_bundle", "bundle_components"],
+            "rationale": "Bundle qualifica elegibilidade ou escopo da regra."
         }
-    ],
+    },
+    "ruleSet": {
+        "key": "product:spotify",
+        "targetProductName": "Spotify",
+        "targetAliases": ["Spotify", "Spotify Premium"],
+        "targetChargecodes": ["RMSPOTIFYVM"]
+    },
+    "ruleRelationship": {
+        "relationshipType": "default_for | supersedes | fallback_of | sibling_of | independent | requires_manual_review",
+        "parentRuleId": null,
+        "supersedesRuleIds": [],
+        "priorityRank": 100,
+        "conditionJson": {},
+        "rationale": "Como esta regra convive com outras do mesmo produto/familia."
+    },
     "disambiguation": {
         "missingDisambiguators": ["crm_product_id", "service_id", "activation_date", "region"],
         "requiredCrmChecks": ["crm_product_id", "service_id"],
@@ -128,6 +148,28 @@ When the dossier is unclear, prefer invoice-line `c_effectivedate` for audit mat
     "confidence": 0.8
 }
 ```
+
+## Rule Situation and Dependencies
+
+Use `ruleSituation` as the primary business-facing state:
+
+- `executable`: the rule has monetary behavior, candidate predicate and enough structure for the deterministic engine, even if it carries caveats such as CRM or bundle checks.
+- `needs_review`: the rule has monetary relevance, but missing mapping, ambiguous scope, unsupported calculation, missing usage/reference data, or priority uncertainty prevents deterministic execution without review.
+- `not_applicable`: the dossier item is operational, informational or otherwise unrelated to billable invoice value.
+
+Do not invent other statuses. Put technical reasons in `dependencyCodes`, `support.unsupportedReasons`, `disambiguation`, `externalConditions` and `requiredCrmChecks`.
+
+`support.confrontabilityStatus` remains for compatibility with the deterministic engine and older UI fields. It must not be used as a free-form business status. A rule can be `ruleSituation: "executable"` and still carry `dependencyCodes` such as `needs_crm` or `needs_bundle_eligibility` when those checks explain eligibility, ambiguity or caveats rather than the existence of the price/formula.
+
+CRM, CRM offer/product IDs, region, activation date and bundle eligibility do not create price or formula. They only decide applicability, disambiguation and audit caveats. The value, discount, free rule or usage formula must come from the dossier.
+
+Every monetary rule must include:
+
+- `ruleSet.key`, grouping rules by product, product family, bundle or plan.
+- `ruleRelationship.relationshipType`, explaining whether this rule is independent, a default, a sibling, a superseder, a fallback, or requires review.
+- Existing-rule context from `/agent-tools/rules/existing` and conflict context from `/agent-tools/rules/conflicts` before finalizing `ruleRelationship`.
+
+`highest_expected_amount_for_underbilling` is only a fallback for underbilling/recovery when two or more rules can govern the same billing context and CRM/taxonomy cannot disambiguate. Do not use it for customer-credit scenarios or as a universal priority rule.
 
 ## Confrontability Statuses
 
@@ -193,20 +235,6 @@ Do not return `descriptionContains`, `productcatalogKeyIn`, or `bundleOfferCapti
 Never use expected price, billed amount, `netAmount`, `minAmount`, or `maxAmount` to select candidates.
 
 If the same chargecode can have more than one monetary rule, do not discard the rule. Fill `disambiguation`, `requiredCrmChecks` and `stacking` so the deterministic audit can later explain whether it used explicit priority, highest expected amount for underbilling, or manual review.
-
-## External Conditions
-
-Use `externalConditions` to preserve all rule-level conditions that are not simple billing predicates.
-
-Examples:
-
-- `crm_product_id`: product/service identifier cited by the dossier or required to disambiguate CRM entitlement.
-- `service_id`: service identifier cited by the dossier or required externally.
-- `activation_date`: customer activation/subscription/first-charge date. If the dossier only says the rule depends on activation timing but does not provide the customer date, set `source: "crm"` and `requiredForAudit: true`.
-- `region`: praca, regional or geographic applicability. If the dossier provides the region, use `source: "dossier"` with `value` or `values` and evidence. If the region is only needed per customer/account, use `source: "crm"` and `requiredForAudit: true`.
-- `customer_segment`, `channel`, `subscription_event`: eligibility or journey conditions that can affect which rule applies.
-
-Do not invent values. If a value is not explicit in the dossier, keep `value`/`values` null or omitted, set the correct `source`, and explain the dependency in `rationale`.
 
 ## Financial Impact Kinds
 
