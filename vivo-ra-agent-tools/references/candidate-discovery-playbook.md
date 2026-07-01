@@ -7,8 +7,11 @@ Candidate discovery must favor recall first, then qualification. It is acceptabl
 1. Start from the dossier target name, such as `Vivo Recado`.
 2. Search catalog with likely kinds: `product`, `variant`, `bundle`, `plan`, `offer`.
 3. Call candidate discovery with `strategy: "high_recall"` and `limit` between 10 and 20.
+   - When the dossier uses a commercial name but the catalog/billing may use aliases, pass `targetAliases`.
+   - If aliases are not provided, the server derives aliases from catalog aliases and billing identifiers found in the catalog search.
 4. If the dossier names a known identifier, pass it in `identifiers`.
 5. If the dossier applies broadly to a product family, a reprice, a permanent free rule, or says "todos os canais", "todos os IDs", "todos os fluxos" or equivalent, call `POST /agent-tools/billing/product-family-candidates`.
+   - Include `targetAliases` there too, especially names from the dossier, portfolio, CRM product/offer names, known commercial aliases and normalized spelling variants.
 6. Inspect candidate evidence in this order:
    1. `chargecode_description` exact or strong match.
    2. `bill_message_text` exact or strong match.
@@ -29,6 +32,13 @@ Candidate discovery must favor recall first, then qualification. It is acceptabl
 - `context_only`: only the bundle/caption matches; product description does not directly represent the target.
 
 Bundle context is not an automatic exclusion. If `productcatalog_description` directly names the affected product/plan and the dossier has broad wording such as "todos os canais" or "todos os IDs existentes", include the candidate unless another rule or evidence excludes it.
+
+Every candidate can return `matchedAliases`, `matchedAliasSources` and `candidateApplicationFilters`.
+
+- `matchedAliases` explains which target alias matched billing/catalog text.
+- `matchedAliasSources` separates matches by `chargecodeDescription`, `billMessageText`, `productcatalogDescription` and `bundleCaption`.
+- `candidateApplicationFilters` preserves billing filters such as `chargecodeKeyIn`, `productcatalogDescriptionIn` and `bundleOfferCaptionIn` for later rule applicability.
+- If a candidate only matches by bundle/caption, keep it `pending` and expect `candidateApplicationFilters.bundleEligibilityStatus = "pending_bundle_eligibility"`; do not treat bundle context as proof of eligibility.
 
 ## Bucket Semantics
 

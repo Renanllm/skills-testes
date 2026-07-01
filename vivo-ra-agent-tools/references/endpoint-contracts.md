@@ -234,6 +234,7 @@ Body:
 ```json
 {
     "targetName": "Vivo Recado",
+    "targetAliases": ["Vivo Recado Premium", "Recado Vivo"],
     "entityKinds": ["product"],
     "identifiers": ["RMVIVORECADM", "RMVIVORECADVT"],
     "strategy": "high_recall",
@@ -248,13 +249,14 @@ Returns:
 - `candidateBuckets.bundleNeighborCandidates[]`
 - `candidateBuckets.lineIdentityCandidates[]`
 - `candidateBuckets.semanticDescriptionCandidates[]`
+- `targetAliases[]` and `derivedTargetAliases[]`
 - catalog and billing candidates
 - `recommendedNextToolCalls[]`
 - warnings and guidance
 
 Use this after drafting the target. It intentionally favors recall and can include false positives. Candidate discovery prioritizes `chargecode_description` and `bill_message_text`, then uses product description, bundle context and inferred chargecode keys as qualification context; it must not use expected price, billed amount, `netAmount`, or amount windows as discovery criteria.
 
-When building the final candidate context, copy all available candidate fields such as `candidateSetKind`, `predicate`, `chargecodeDescription`, `billMessageText`, `lineCount`, `invoiceCount`, `netAmount`, `matchedOn`, `candidateSourcePriority`, `lineRoleSuggestion`, `positiveSignals`, `negativeSignals`, `recommendedDecision`, `ambiguityReason` and `risk`.
+When building the final candidate context, copy all available candidate fields such as `candidateSetKind`, `predicate`, `chargecodeDescription`, `billMessageText`, `lineCount`, `invoiceCount`, `netAmount`, `matchedOn`, `matchedAliases`, `matchedAliasSources`, `candidateApplicationFilters`, `candidateSourcePriority`, `lineRoleSuggestion`, `positiveSignals`, `negativeSignals`, `recommendedDecision`, `ambiguityReason` and `risk`.
 
 ## Product Family Candidates
 
@@ -267,6 +269,7 @@ Body:
 ```json
 {
     "targetNames": ["Disney+", "Disney+ Padrão", "Disney+ Standard"],
+    "targetAliases": ["Disney Plus", "Disney Padrão"],
     "excludedVariants": ["Anúncios"],
     "includeBundleContext": true,
     "limit": 30
@@ -296,6 +299,9 @@ Returns `candidates[]` with:
 - `candidateSourcePriority`: `chargecode_description | bill_message_text | productcatalog_description | bundle_caption | catalog_alias | inferred_chargecode`
 - `lineRoleSuggestion`: `direct_product_charge | discount | different_variant | plan_with_benefit | context_only | sva_ambiguous | chargecode_description_match | unknown`
 - `suggestedDecision`: `include | pending | exclude`
+- `matchedAliases[]`
+- `matchedAliasSources`
+- `candidateApplicationFilters`
 - `positiveSignals[]`
 - `negativeSignals[]`
 - `rationale`
@@ -306,6 +312,7 @@ Regra de decisao:
 - Inclua candidatos `direct_product_charge` quando a descricao da linha representa diretamente o produto/plano afetado, mesmo que exista `bundleOfferCaption`.
 - Exclua `discount`, `different_variant` e `plan_with_benefit` do predicado final, mantendo-os como contexto ou evidencia de exclusao.
 - Mantenha `context_only` como `pending`, salvo evidencia explicita de que a regra atinge aquela linha.
+- Se `candidateApplicationFilters.bundleEligibilityStatus = "pending_bundle_eligibility"`, preserve o candidato como considerado/pendente e deixe a elegibilidade para o resolver CRM/bundle.
 - Nao use `positiveAmount`, `negativeAmount`, `netAmount` ou preco esperado para descobrir candidatos. Valores monetarios servem para contexto e auditoria posterior.
 
 ## Candidate Clusters
