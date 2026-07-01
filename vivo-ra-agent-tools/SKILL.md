@@ -44,9 +44,10 @@ Leia `references/non-confrontable-items.md` quando o dossie trouxer instrucoes o
 11. Use `POST /agent-tools/billing/line-identity-search` ou `POST /agent-tools/billing/identifier-search` quando precisar entender relacoes entre produto, bundle, descricao ou charge code.
 12. Produza `candidateQualification` com candidatos incluidos, excluidos e pendentes. Para cada candidato retornado, preserve `billingContext` com charge codes, chargecode descriptions, bill message texts, productcatalog keys, productcatalog descriptions, bundle captions, amostras, sinais, papel da linha, origem do match e tools de origem.
 13. Chame `POST /agent-tools/billing/qualification-validate` com o predicado final proposto.
-14. Chame `POST /agent-tools/rules/existing`, depois `POST /agent-tools/rules/validate`, depois `POST /agent-tools/rules/conflicts`.
-15. Opcionalmente chame `POST /agent-tools/audit/preview` apenas para uma pequena amostra. Nao calcule impacto final em toda a base.
-16. Retorne o JSON descrito em `references/output-contract.md`.
+14. Quando a regra depender de elegibilidade por cliente, produto/oferta CRM, bundle CRM, vigencia de contrato, praca/regiao, ativacao, ou quando houver candidatos concorrentes que precisem de contexto de cliente para desambiguar, chame `POST /agent-tools/crm/contracts/search`. Use esses dados como contexto externo disponivel; se o mock nao tiver dados suficientes, preencha `required_crm_checks` e mantenha a ressalva.
+15. Chame `POST /agent-tools/rules/existing`, depois `POST /agent-tools/rules/validate`, depois `POST /agent-tools/rules/conflicts`.
+16. Opcionalmente chame `POST /agent-tools/audit/preview` apenas para uma pequena amostra. Nao calcule impacto final em toda a base.
+17. Retorne o JSON descrito em `references/output-contract.md`.
 
 ## Regras Duras
 
@@ -67,6 +68,7 @@ Leia `references/non-confrontable-items.md` quando o dossie trouxer instrucoes o
 - Se candidatos forem amplos demais, mantenha-os nos candidate sets, mas exclua ou marque como pendente na qualificacao.
 - Nao retorne candidato ponderado sem `billingContext` estruturado. A decisao do agente precisa carregar o contexto de fatura usado para include, exclude ou pending.
 - Para toda regra financeira, preencha `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `required_crm_checks` quando houver candidatos ou dados externos faltantes. Se nao houver concorrencia ou checks externos, use arrays vazios e explique `not_applicable`.
+- Dados retornados por `POST /agent-tools/crm/contracts/search` nao criam uma regra nova sozinhos. Eles servem para qualificar elegibilidade, vigencia, CRM product/offer IDs, bundle CRM, praca/regiao e ambiguidades entre candidatos de billing.
 - Para toda regra financeira, preencha `externalConditions` dentro de `rule_draft_json` e `external_conditions_json` no envelope. Use esse bloco para `crm_product_id`, `service_id`, `activation_date`, `region`, `customer_segment`, `channel` e outras condicoes de elegibilidade, mesmo quando o valor nao estiver no dossie.
 - Em `externalConditions`, diferencie condicoes extraidas do dossie (`source: "dossier"`, com `value`/`values` e evidencia) de dados que precisam ser consultados em CRM ou outro sistema (`source: "crm"`, `requiredForAudit: true`, com racional). Nao invente valores ausentes no dossie.
 - Nao use `expected.amount`, preco alvo, valor faturado, `netAmount` ou janelas de valor para selecionar candidatos. Esses valores entram na logica de regra/auditoria depois que as linhas candidatas forem encontradas por descricao/chargecode.

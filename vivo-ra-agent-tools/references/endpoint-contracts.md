@@ -100,6 +100,62 @@ GET /agent-tools/catalog/entities/:entityId
 
 Returns one entity with aliases, variants, relationships, source data, and invoice stats.
 
+## CRM Mock Contract Search
+
+```http
+POST /agent-tools/crm/contracts/search
+```
+
+Body:
+
+```json
+{
+    "customerKeys": ["100001272"],
+    "subscriberKeys": ["58233393"],
+    "financialAccountKeys": ["1127295986"],
+    "contractIds": ["mock-spotify-100001272"],
+    "crmProductIds": ["0055013624"],
+    "crmOfferIds": ["0055013625"],
+    "productName": "Spotify",
+    "productVariant": "Individual",
+    "activeOn": "2026-04-21",
+    "statuses": ["active"],
+    "includeInactive": false,
+    "limit": 20,
+    "offset": 0
+}
+```
+
+Returns:
+
+- `contracts[]`
+- `total`
+
+Each contract includes:
+
+- `customerKey`
+- `subscriberKey`
+- `financialAccountKey`
+- `crmSystem`
+- `contractId`
+- `crmProductId`
+- `crmOfferId`
+- `productName`
+- `productVariant`
+- `offerName`
+- `offerInstanceId`
+- `activationDate`
+- `validFrom`
+- `validTo`
+- `status`
+- `region`
+- `bundleName`
+- `bundleCrmId`
+- `bundleStatus`
+- `metadata`
+
+Use esta tool quando a regra depender de elegibilidade por cliente, produto/oferta CRM, bundle CRM, vigencia de contrato, ativacao, praca/regiao, ou quando candidatos de billing precisarem ser desambiguados por contexto de cliente. O mock de CRM e incremental: se a tool nao retornar dados suficientes, nao invente contratos; registre a lacuna em `required_crm_checks` e explique que a auditoria depende de CRM.
+
 ## Billing Identifier Search
 
 ```http
