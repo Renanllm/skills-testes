@@ -88,12 +88,25 @@ When the dossier is unclear, prefer invoice-line `c_effectivedate` for audit mat
         "unsupportedReasons": [],
         "requiredExternalData": []
     },
+    "eligibilityWindow": {
+        "anchor": "crm.activation_date | crm.valid_from | billing.effective_date | billing.period_start_date | dossier.effective_from",
+        "durationDays": null,
+        "durationMonths": 3,
+        "invoiceDateField": "effective_date | period_start_date | period_end_date",
+        "expectedDuringWindow": {
+            "amount": 0,
+            "calculationKind": "no_charge"
+        },
+        "outsideWindowPolicy": "use_other_rule | not_applicable | needs_review",
+        "requiredChecks": ["activation_date"],
+        "rationale": "Como a data de ativacao/contratacao controla a aplicacao da regra."
+    },
     "externalConditions": {
         "crm": {
             "policy": "not_required | required_to_apply | required_to_disambiguate | optional_context",
-            "crmProductIds": ["0055013624"],
-            "crmOfferIds": ["0055013625"],
-            "bundleCrmIds": ["BUNDLE-CRM-001"],
+            "crmProductIds": ["IDs CRM de produto quando extraidos; use [] quando ausentes"],
+            "crmOfferIds": ["IDs CRM de oferta quando extraidos; use [] quando ausentes"],
+            "bundleCrmIds": ["IDs CRM de bundle/oferta bundle quando extraidos; use [] quando ausentes"],
             "regions": ["SP"],
             "activationDatePolicy": "active_on_effective_date | active_on_period_start | relative_to_activation | not_required",
             "requiredChecks": ["crm_product_id", "activation_date"],
@@ -218,6 +231,17 @@ Use these names in `calculation.requiredColumns`:
 - discount: `charge_total_amount`, plus either `charge_base_rate` or `calculation.expected.referenceAmount`
 
 If required columns or external data are missing, do not force a deterministic rule. Set the correct `support.confrontabilityStatus`.
+
+## CRM, Bundle, and Activation Windows
+
+CRM and bundle data are applicability inputs, not price sources. Use them only when the dossier already contains a monetary claim such as fixed price, no charge, discount, usage tariff, or a free-period condition.
+
+- `crmProductIds`, `crmOfferIds` and `bundleCrmIds` are optional. Extract them when the dossier or CRM mock provides them. Do not invent IDs; use empty arrays and record `requiredCrmChecks` when absent.
+- Use `externalConditions.crm.policy: "required_to_apply"` when CRM decides whether the rule applies to a customer or invoice line.
+- Use `externalConditions.crm.policy: "required_to_disambiguate"` when multiple commercial rules can share the same chargecode and CRM decides which rule applies.
+- Use `activationDatePolicy: "relative_to_activation"` plus `eligibilityWindow` when the rule is based on the contract/activation date, for example three free months from subscription.
+- Use `externalConditions.bundleEligibility` when the rule applies only inside a bundle or depends on active bundle components. Bundle captions from invoices help discover candidates but do not prove eligibility alone.
+- If CRM/bundle information is not available in the mock, keep the rule and mark `dependencyCodes`, `requiredCrmChecks`, `disambiguation` and, when needed, `needs_bundle_eligibility`.
 
 ## Candidate Predicate Rules
 

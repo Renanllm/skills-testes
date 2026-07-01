@@ -151,10 +151,11 @@ Each contract includes:
 - `region`
 - `bundleName`
 - `bundleCrmId`
+- `bundleOfferCaption`
 - `bundleStatus`
 - `metadata`
 
-Use esta tool quando a regra depender de elegibilidade por cliente, produto/oferta CRM, bundle CRM, vigencia de contrato, ativacao, praca/regiao, ou quando candidatos de billing precisarem ser desambiguados por contexto de cliente. O mock de CRM e incremental: se a tool nao retornar dados suficientes, nao invente contratos; registre a lacuna em `required_crm_checks` e explique que a auditoria depende de CRM.
+Use esta tool quando a regra depender de elegibilidade por cliente, produto/oferta CRM, bundle CRM, vigencia de contrato, ativacao, praca/regiao, janela relativa a contratacao, ou quando candidatos de billing precisarem ser desambiguados por contexto de cliente. `crmProductIds`, `crmOfferIds` e `bundleCrmIds` sao filtros opcionais, nao campos obrigatorios de toda regra. O mock de CRM e incremental: se a tool nao retornar dados suficientes, nao invente contratos ou IDs; registre a lacuna em `required_crm_checks` e explique que a auditoria depende de CRM.
 
 ## Billing Identifier Search
 
