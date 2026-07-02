@@ -36,7 +36,7 @@ Leia `references/non-confrontable-items.md` quando o dossie trouxer instrucoes o
 3. Chame `GET /agent-tools/rule-dsl/contract`.
 4. Se o contrato retornado nao for compativel com `v0.5`, pare e retorne `status: "blocked"` com `contract_mismatch` no resumo da tool. Nao tente adaptar uma regra nova para contrato antigo.
 5. Para cada regra monetaria ou confrontavel, chame `POST /agent-tools/catalog/search` usando o alvo comercial e tipos provaveis de entidade.
-6. Crie um rascunho de regra com alvo, comportamento esperado, evidencias, datas, condicoes CRM/bundle e incertezas. IDs CRM sao opcionais: extraia quando aparecerem no dossie ou nas tools, mas use arrays vazios e `requiredCrmChecks` quando nao existirem.
+6. Crie um rascunho de regra com alvo, comportamento esperado, evidencias, datas, condicoes CRM/bundle, aprovacao binaria e incertezas. IDs CRM sao opcionais: extraia quando aparecerem no dossie ou nas tools, mas use arrays vazios e `requiredCrmChecks` quando nao existirem.
 7. Chame `POST /agent-tools/billing/candidate-discovery` com `strategy: "high_recall"`.
 8. Quando a regra afetar uma familia/plano de produto, reprecificacao, gratuidade ampla, ou quando o dossie disser "todos os canais", "todos os IDs", "todos os fluxos" ou equivalente, chame `POST /agent-tools/billing/product-family-candidates` antes de fechar o predicado final.
 9. Escolha candidatos usando primeiro `chargecode_description` e `bill_message_text`; depois use `productcatalog_description`, papel da linha, contexto de bundle e chargecode inferido para qualificar. Nao use preco esperado, valor faturado ou janelas de valor como criterio de descoberta.
@@ -59,7 +59,10 @@ Leia `references/non-confrontable-items.md` quando o dossie trouxer instrucoes o
 - Itens em `itens_mapeados_nao_suportados` sao lacunas/politicas extraidas para rastreabilidade. Eles devem ter `source_claim_id` quando derivarem de uma declaracao monetaria, mas nao representam regra auditavel nem predicado final.
 - Nao varra todas as linhas de fatura. Use candidate discovery, clusters, amostras e validadores.
 - Nao calcule impacto financeiro final em toda a base de faturas. O motor deterministico faz isso depois.
-- Nao persista nem diga que uma regra esta aprovada. Retorne rascunho e qualificacao para revisao.
+- Nao invente aprovacao. Extraia `approval_status: "approved" | "not_approved"` do proprio dossie: use `approved` somente quando houver GO/aprovacao/decisao de seguir explicitamente aplicavel a regra; use `not_approved` quando houver NOGO, cancelamento, decisao de nao seguir, "sem atuacao", "nao aprovado", "nao iniciado", item ainda em discussao ou ausencia de aprovacao explicita.
+- Nao classifique como NOGO apenas porque apareceu a frase operacional "Emitir GO / NO GO da etapa". Essa frase e o nome da tarefa. A decisao real vem da coluna/status da aprovacao da fase, do status do projeto ou de uma declaracao textual de NOGO/cancelamento/impeditiva.
+- Toda regra financeira e todo item monetario mapeado deve carregar `approval_status` e `approval_evidence`. Se a aprovacao estiver no nivel do dossie inteiro, replique a decisao em cada regra derivada daquele dossie e explique a evidencia.
+- Regra `not_approved` pode ser mapeada para rastreabilidade, mas nao deve gerar predicado final ativo nem impacto financeiro. Use `ruleSituation: "needs_review"` ou `not_applicable` conforme o caso, e explique em `support.unsupportedReasons`/`situationRationale`.
 - Nao transforme instrucoes puramente operacionais em regras deterministicas de faturamento. Retorne-as como nao confrontaveis ou itens mapeados nao suportados quando forem uteis para rastreabilidade.
 - Nao use descricao ampla, nome do produto ou nome do bundle como unico predicado final de regra monetaria de linha.
 - Para regras monetarias de linha de fatura, resolva o predicado final para `chargecodeKeyIn` sempre que possivel. Se isso nao for possivel, marque `needs_mapping` ou `needs_agent_qualification`.

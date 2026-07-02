@@ -10,7 +10,9 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
     "dossie": {
         "arquivo": "20131.pdf",
         "codigo": "20131",
-        "titulo": "Titulo inferido do dossie"
+        "titulo": "Titulo inferido do dossie",
+        "approval_status": "approved | not_approved",
+        "approval_evidence": "Trecho curto que comprova GO/NOGO/aprovacao/nao aprovacao. Use null se inexistente."
     },
     "resumo": {
         "narrativa": "Resumo curto em portugues brasileiro.",
@@ -25,6 +27,8 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
         {
             "source_claim_id": "claim-001",
             "nome_regra": "",
+            "approval_status": "approved | not_approved",
+            "approval_evidence": "Trecho curto do dossie que comprova a aprovacao ou nao aprovacao da regra.",
             "situacao_regra": "executable | needs_review | not_applicable",
             "dependency_codes": ["needs_crm", "needs_bundle_eligibility"],
             "situation_rationale": "Resumo curto da situacao e dependencias.",
@@ -40,7 +44,7 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
             "calculation_kind": "fixed_amount | no_charge | discount_amount | discount_percent | usage_event_tariff | usage_duration_tariff | usage_volume_tariff | daily_rate | prorata_by_period | bundle_component_sum | forbidden_charge | presence_required | custom_logic",
             "required_columns": ["charge_total_amount"],
             "valor_esperado": 0,
-            "rule_draft_json": "{\"ruleName\":\"...\",\"ruleSituation\":\"executable\",\"dependencyCodes\":[],\"calculation\":{\"kind\":\"no_charge\"},\"ruleSet\":{\"key\":\"product:vivo-recado\"},\"ruleRelationship\":{\"relationshipType\":\"independent\"}}",
+            "rule_draft_json": "{\"ruleName\":\"...\",\"approvalStatus\":\"approved\",\"approvalEvidence\":\"GO da regra no dossie\",\"ruleSituation\":\"executable\",\"dependencyCodes\":[],\"calculation\":{\"kind\":\"no_charge\"},\"ruleSet\":{\"key\":\"product:vivo-recado\"},\"ruleRelationship\":{\"relationshipType\":\"independent\"}}",
             "calculation_json": "{\"kind\":\"no_charge\",\"amountField\":\"charge_total_amount\"}",
             "support_json": "{\"confrontabilityStatus\":\"confrontable_deterministic\",\"unsupportedReasons\":[]}",
             "external_conditions_json": "{\"crm\":{\"policy\":\"not_required\"},\"bundleEligibility\":{\"policy\":\"not_required\"}}",
@@ -73,6 +77,8 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
         {
             "source_claim_id": "claim-002",
             "titulo": "",
+            "approval_status": "approved | not_approved",
+            "approval_evidence": "Trecho curto do dossie que comprova a aprovacao ou nao aprovacao do item.",
             "status_suporte": "needs_crm | needs_subscription_event | needs_entitlement_inventory | needs_usage_quantity | needs_reference_price | not_supported_yet | needs_mapping | not_monetary",
             "unsupported_reasons": [],
             "required_external_data": [],
@@ -214,19 +220,22 @@ Antes de retornar:
 1. Toda regra financeira deve ter `source_claim_id` apontando para uma declaracao monetaria do dossie.
 2. Nenhuma regra financeira pode existir apenas porque uma tool retornou um candidato de billing. Candidatos qualificam uma regra existente; nao criam regra nova.
 3. Toda regra financeira deve ter evidencia.
-4. Toda regra financeira deve ter `financialImpact.monetary: true` dentro de `rule_draft_json`.
-5. Toda regra financeira deve ter `calculation.kind`, `calculation.requiredColumns` e `support.confrontabilityStatus`.
-6. Toda regra financeira deve ter `situacao_regra`, `dependency_codes`, `rule_set_json`, `rule_relationship_json` e os campos equivalentes dentro de `rule_draft_json`.
-7. `situacao_regra` deve ser apenas `executable`, `needs_review` ou `not_applicable`; status tecnicos ficam em `dependency_codes` e `support_json`.
-8. CRM, bundle CRM e elegibilidade de bundle devem aparecer em `external_conditions_json` quando forem necessarios para aplicar ou desambiguar a regra, mas nunca devem criar preco/formula sem declaracao monetaria do dossie. IDs CRM sao opcionais: use arrays vazios quando ausentes e registre `required_crm_checks`.
-9. Toda regra `confrontable_deterministic` deve ter predicado executavel.
-10. Toda regra financeira confrontavel deve carregar a vigencia do dossie em `valid_from`/`valid_to` no envelope e em `effectiveFrom`/`effectiveTo` dentro de `rule_draft_json`. Use `null` para data fim ausente.
-11. Toda regra financeira com gratuidade/desconto/janela relativa a contratacao ou ativacao deve carregar `eligibilityWindow` dentro de `rule_draft_json`; se usar campo espelho, preencha tambem `eligibility_window_json`.
-12. Todo predicado monetario final deve incluir `chargecodeKeyIn` ou `billingLineIdentityIn[].chargecodeKey`.
-13. Todo candidato amplo deve estar como `include`, `exclude` ou `pending`.
-14. Todo candidato deve preservar `candidate_source_priority`, `line_role`, `billing_context_json`, `matched_on`, sinais positivos/negativos e racional.
-15. Toda regra deve preservar `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `required_crm_checks` quando esses dados forem conhecidos ou quando faltarem dados externos.
-16. Toda declaracao monetaria sem suporte deterministico deve aparecer em `itens_mapeados_nao_suportados` ou em `regras_financeiras` com `status_confrontabilidade` nao deterministico.
-17. Todo item em `itens_mapeados_nao_suportados` derivado de declaracao monetaria deve preservar `source_claim_id`.
-18. Toda falha de tool deve aparecer em `status: "blocked"` ou `perguntas_abertas_globais`.
-19. Nenhum campo deve conter o bearer token.
+4. Todo dossie, regra financeira e item monetario mapeado deve ter `approval_status: "approved" | "not_approved"` e `approval_evidence`.
+5. Use `approved` somente com GO/aprovacao/decisao de seguir explicita no dossie. Use `not_approved` para NOGO, cancelado, sem atuacao, nao aprovado, nao iniciado, ainda em discussao ou ausencia de aprovacao explicita.
+6. Regra `not_approved` nao deve ter predicado final ativo nem ser apresentada como apta a gerar impacto financeiro.
+7. Toda regra financeira deve ter `financialImpact.monetary: true` dentro de `rule_draft_json`.
+8. Toda regra financeira deve ter `calculation.kind`, `calculation.requiredColumns` e `support.confrontabilityStatus`.
+9. Toda regra financeira deve ter `situacao_regra`, `dependency_codes`, `rule_set_json`, `rule_relationship_json` e os campos equivalentes dentro de `rule_draft_json`.
+10. `situacao_regra` deve ser apenas `executable`, `needs_review` ou `not_applicable`; status tecnicos ficam em `dependency_codes` e `support_json`.
+11. CRM, bundle CRM e elegibilidade de bundle devem aparecer em `external_conditions_json` quando forem necessarios para aplicar ou desambiguar a regra, mas nunca devem criar preco/formula sem declaracao monetaria do dossie. IDs CRM sao opcionais: use arrays vazios quando ausentes e registre `required_crm_checks`.
+12. Toda regra `confrontable_deterministic` deve ter predicado executavel.
+13. Toda regra financeira confrontavel deve carregar a vigencia do dossie em `valid_from`/`valid_to` no envelope e em `effectiveFrom`/`effectiveTo` dentro de `rule_draft_json`. Use `null` para data fim ausente.
+14. Toda regra financeira com gratuidade/desconto/janela relativa a contratacao ou ativacao deve carregar `eligibilityWindow` dentro de `rule_draft_json`; se usar campo espelho, preencha tambem `eligibility_window_json`.
+15. Todo predicado monetario final deve incluir `chargecodeKeyIn` ou `billingLineIdentityIn[].chargecodeKey`.
+16. Todo candidato amplo deve estar como `include`, `exclude` ou `pending`.
+17. Todo candidato deve preservar `candidate_source_priority`, `line_role`, `billing_context_json`, `matched_on`, sinais positivos/negativos e racional.
+18. Toda regra deve preservar `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `required_crm_checks` quando esses dados forem conhecidos ou quando faltarem dados externos.
+19. Toda declaracao monetaria sem suporte deterministico deve aparecer em `itens_mapeados_nao_suportados` ou em `regras_financeiras` com `status_confrontabilidade` nao deterministico.
+20. Todo item em `itens_mapeados_nao_suportados` derivado de declaracao monetaria deve preservar `source_claim_id`.
+21. Toda falha de tool deve aparecer em `status: "blocked"` ou `perguntas_abertas_globais`.
+22. Nenhum campo deve conter o bearer token.

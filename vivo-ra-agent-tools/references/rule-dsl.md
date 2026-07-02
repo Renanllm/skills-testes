@@ -23,6 +23,8 @@ When the dossier is unclear, prefer invoice-line `c_effectivedate` for audit mat
 ```json
 {
     "ruleName": "Human-readable rule name",
+    "approvalStatus": "approved | not_approved",
+    "approvalEvidence": "Trecho curto do dossie que comprova aprovacao ou nao aprovacao.",
     "ruleSituation": "executable | needs_review | not_applicable",
     "dependencyCodes": ["needs_crm", "needs_bundle_eligibility"],
     "situationRationale": "Resumo curto da situacao principal e das dependencias.",
@@ -161,6 +163,17 @@ When the dossier is unclear, prefer invoice-line `c_effectivedate` for audit mat
     "confidence": 0.8
 }
 ```
+
+## Approval
+
+Use `approvalStatus` as a binary gate for audit execution:
+
+- `approved`: the dossier explicitly says GO, approved, valid to proceed, or equivalent for that monetary claim/rule.
+- `not_approved`: the dossier says NOGO, canceled, not approved, no action, not started, still under discussion, or does not provide explicit approval.
+
+Do not infer approval from candidate quality, confidence, CRM data, or billing evidence. Those only qualify mapping and audit readiness.
+
+A `not_approved` rule can be mapped for traceability, but it must not generate deterministic financial impact. It should carry `approvalEvidence`, no active final predicate for execution, and a `ruleSituation`/`support` explanation that makes the block visible.
 
 ## Rule Situation and Dependencies
 
