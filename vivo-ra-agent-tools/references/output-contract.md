@@ -47,7 +47,7 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
             "rule_draft_json": "{\"ruleName\":\"...\",\"approvalStatus\":\"approved\",\"approvalEvidence\":\"GO da regra no dossie\",\"ruleSituation\":\"executable\",\"dependencyCodes\":[],\"calculation\":{\"kind\":\"no_charge\"},\"ruleSet\":{\"key\":\"product:vivo-recado\"},\"ruleRelationship\":{\"relationshipType\":\"independent\"}}",
             "calculation_json": "{\"kind\":\"no_charge\",\"amountField\":\"charge_total_amount\"}",
             "support_json": "{\"confrontabilityStatus\":\"confrontable_deterministic\",\"unsupportedReasons\":[]}",
-            "external_conditions_json": "{\"crm\":{\"policy\":\"not_required\"},\"bundleEligibility\":{\"policy\":\"not_required\"}}",
+            "external_conditions_json": "{\"crm\":{\"policy\":\"not_required\",\"crmProductIds\":[],\"crmOfferIds\":[],\"bundleCrmIds\":[],\"crmProductIdsFromDossier\":[],\"crmOfferIdsFromDossier\":[],\"bundleCrmIdsFromDossier\":[],\"serviceIdsFromDossier\":[],\"crmProductIdsConfirmedInMock\":[],\"crmOfferIdsConfirmedInMock\":[],\"bundleCrmIdsConfirmedInMock\":[],\"serviceIdsConfirmedInMock\":[],\"declaredCrmIds\":[]},\"bundleEligibility\":{\"policy\":\"not_required\"}}",
             "eligibility_window_json": "{\"anchor\":\"crm.activation_date\",\"durationMonths\":3,\"invoiceDateField\":\"period_start_date\",\"expectedDuringWindow\":{\"amount\":0,\"calculationKind\":\"no_charge\"},\"requiredChecks\":[\"activation_date\"]}",
             "rule_set_json": "{\"key\":\"product:vivo-recado\",\"targetProductName\":\"Vivo Recado\",\"targetChargecodes\":[\"RMVIVORECADM\"]}",
             "rule_relationship_json": "{\"relationshipType\":\"independent\",\"priorityRank\":100,\"rationale\":\"Sem regra concorrente identificada.\"}",
@@ -228,14 +228,15 @@ Antes de retornar:
 9. Toda regra financeira deve ter `situacao_regra`, `dependency_codes`, `rule_set_json`, `rule_relationship_json` e os campos equivalentes dentro de `rule_draft_json`.
 10. `situacao_regra` deve ser apenas `executable`, `needs_review` ou `not_applicable`; status tecnicos ficam em `dependency_codes` e `support_json`.
 11. CRM, bundle CRM e elegibilidade de bundle devem aparecer em `external_conditions_json` quando forem necessarios para aplicar ou desambiguar a regra, mas nunca devem criar preco/formula sem declaracao monetaria do dossie. IDs CRM sao opcionais: use arrays vazios quando ausentes e registre `required_crm_checks`.
-12. Toda regra `confrontable_deterministic` deve ter predicado executavel.
-13. Toda regra financeira confrontavel deve carregar a vigencia do dossie em `valid_from`/`valid_to` no envelope e em `effectiveFrom`/`effectiveTo` dentro de `rule_draft_json`. Use `null` para data fim ausente.
-14. Toda regra financeira com gratuidade/desconto/janela relativa a contratacao ou ativacao deve carregar `eligibilityWindow` dentro de `rule_draft_json`; se usar campo espelho, preencha tambem `eligibility_window_json`.
-15. Todo predicado monetario final deve incluir `chargecodeKeyIn` ou `billingLineIdentityIn[].chargecodeKey`.
-16. Todo candidato amplo deve estar como `include`, `exclude` ou `pending`.
-17. Todo candidato deve preservar `candidate_source_priority`, `line_role`, `billing_context_json`, `matched_on`, sinais positivos/negativos e racional.
-18. Toda regra deve preservar `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `required_crm_checks` quando esses dados forem conhecidos ou quando faltarem dados externos.
-19. Toda declaracao monetaria sem suporte deterministico deve aparecer em `itens_mapeados_nao_suportados` ou em `regras_financeiras` com `status_confrontabilidade` nao deterministico.
-20. Todo item em `itens_mapeados_nao_suportados` derivado de declaracao monetaria deve preservar `source_claim_id`.
-21. Toda falha de tool deve aparecer em `status: "blocked"` ou `perguntas_abertas_globais`.
-22. Nenhum campo deve conter o bearer token.
+12. Todo ID explicitamente declarado no dossie deve ser preservado em `externalConditions.crm` dentro de `rule_draft_json` e no espelho `external_conditions_json`, mesmo que o CRM mock nao retorne contrato. Use `crmProductIdsFromDossier`, `crmOfferIdsFromDossier`, `bundleCrmIdsFromDossier`, `serviceIdsFromDossier` e `declaredCrmIds` com evidencia. Quando o rotulo do ID for claro, tambem coloque o ID no array canonico usado pela auditoria (`crmProductIds`, `crmOfferIds` ou `bundleCrmIds`). Use `*ConfirmedInMock` apenas para IDs confirmados pela tool de CRM.
+13. Toda regra `confrontable_deterministic` deve ter predicado executavel.
+14. Toda regra financeira confrontavel deve carregar a vigencia do dossie em `valid_from`/`valid_to` no envelope e em `effectiveFrom`/`effectiveTo` dentro de `rule_draft_json`. Use `null` para data fim ausente.
+15. Toda regra financeira com gratuidade/desconto/janela relativa a contratacao ou ativacao deve carregar `eligibilityWindow` dentro de `rule_draft_json`; se usar campo espelho, preencha tambem `eligibility_window_json`.
+16. Todo predicado monetario final deve incluir `chargecodeKeyIn` ou `billingLineIdentityIn[].chargecodeKey`.
+17. Todo candidato amplo deve estar como `include`, `exclude` ou `pending`.
+18. Todo candidato deve preservar `candidate_source_priority`, `line_role`, `billing_context_json`, `matched_on`, sinais positivos/negativos e racional.
+19. Toda regra deve preservar `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `required_crm_checks` quando esses dados forem conhecidos ou quando faltarem dados externos.
+20. Toda declaracao monetaria sem suporte deterministico deve aparecer em `itens_mapeados_nao_suportados` ou em `regras_financeiras` com `status_confrontabilidade` nao deterministico.
+21. Todo item em `itens_mapeados_nao_suportados` derivado de declaracao monetaria deve preservar `source_claim_id`.
+22. Toda falha de tool deve aparecer em `status: "blocked"` ou `perguntas_abertas_globais`.
+23. Nenhum campo deve conter o bearer token.

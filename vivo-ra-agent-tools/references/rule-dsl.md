@@ -106,9 +106,31 @@ When the dossier is unclear, prefer invoice-line `c_effectivedate` for audit mat
     "externalConditions": {
         "crm": {
             "policy": "not_required | required_to_apply | required_to_disambiguate | optional_context",
-            "crmProductIds": ["IDs CRM de produto quando extraidos; use [] quando ausentes"],
-            "crmOfferIds": ["IDs CRM de oferta quando extraidos; use [] quando ausentes"],
-            "bundleCrmIds": ["IDs CRM de bundle/oferta bundle quando extraidos; use [] quando ausentes"],
+            "crmProductIds": ["IDs CRM de produto usados pela auditoria, incluindo IDs declarados no dossie ou confirmados no CRM mock; use [] quando ausentes"],
+            "crmOfferIds": ["IDs CRM de oferta usados pela auditoria, incluindo IDs declarados no dossie ou confirmados no CRM mock; use [] quando ausentes"],
+            "bundleCrmIds": ["IDs CRM de bundle/oferta bundle usados pela auditoria, incluindo IDs declarados no dossie ou confirmados no CRM mock; use [] quando ausentes"],
+            "crmProductIdsFromDossier": ["Product IDs / IDs CRM de produto explicitamente declarados no dossie; preserve mesmo se o CRM mock nao confirmar"],
+            "crmOfferIdsFromDossier": ["Offer IDs / IDs de oferta explicitamente declarados no dossie; preserve mesmo se o CRM mock nao confirmar"],
+            "bundleCrmIdsFromDossier": ["Bundle IDs / IDs de oferta bundle explicitamente declarados no dossie; preserve mesmo se o CRM mock nao confirmar"],
+            "serviceIdsFromDossier": ["Service IDs explicitamente declarados no dossie; preserve como service_id, nao converta automaticamente para produto/oferta"],
+            "crmProductIdsConfirmedInMock": ["Subconjunto de Product IDs confirmado no CRM mock; [] quando nao confirmado"],
+            "crmOfferIdsConfirmedInMock": ["Subconjunto de Offer IDs confirmado no CRM mock; [] quando nao confirmado"],
+            "bundleCrmIdsConfirmedInMock": ["Subconjunto de Bundle IDs confirmado no CRM mock; [] quando nao confirmado"],
+            "serviceIdsConfirmedInMock": ["Subconjunto de Service IDs confirmado no CRM mock; [] quando nao confirmado"],
+            "declaredCrmIds": [
+                {
+                    "id": "ID exatamente como aparece no dossie",
+                    "idType": "crm_product_id | crm_offer_id | bundle_crm_id | service_id | ps_id | unknown_crm_id",
+                    "source": "dossier | crm_mock",
+                    "verificationStatus": "declared_unverified | crm_confirmed | not_found_in_crm_mock",
+                    "evidence": {
+                        "source": "20733.pdf",
+                        "page": 1,
+                        "quote": "Service ID: 0101060500 Product ID: 0066001154"
+                    },
+                    "rationale": "Por que este ID foi classificado assim."
+                }
+            ],
             "regions": ["SP"],
             "activationDatePolicy": "active_on_effective_date | active_on_period_start | relative_to_activation | not_required",
             "requiredChecks": ["crm_product_id", "activation_date"],
@@ -250,6 +272,9 @@ If required columns or external data are missing, do not force a deterministic r
 CRM and bundle data are applicability inputs, not price sources. Use them only when the dossier already contains a monetary claim such as fixed price, no charge, discount, usage tariff, or a free-period condition.
 
 - `crmProductIds`, `crmOfferIds` and `bundleCrmIds` are optional. Extract them when the dossier or CRM mock provides them. Do not invent IDs; use empty arrays and record `requiredCrmChecks` when absent.
+- IDs explicitly declared in the dossier must be preserved even if CRM mock has no matching contract. Put them in the canonical audit arrays when the label is clear (`crmProductIds`, `crmOfferIds`, `bundleCrmIds`) and always mirror them in `*FromDossier` plus `declaredCrmIds` with evidence.
+- `Service ID` is not the same as product/offer ID. Store it in `serviceIdsFromDossier` and `declaredCrmIds` with `idType: "service_id"`. Use `requiredCrmChecks` if the service-to-product/offer relation still needs confirmation.
+- Use `*ConfirmedInMock` only for ids actually returned by CRM mock. Empty confirmed arrays do not invalidate dossier-declared ids.
 - Use `externalConditions.crm.policy: "required_to_apply"` when CRM decides whether the rule applies to a customer or invoice line.
 - Use `externalConditions.crm.policy: "required_to_disambiguate"` when multiple commercial rules can share the same chargecode and CRM decides which rule applies.
 - Use `activationDatePolicy: "relative_to_activation"` plus `eligibilityWindow` when the rule is based on the contract/activation date, for example three free months from subscription.

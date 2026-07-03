@@ -155,7 +155,7 @@ Each contract includes:
 - `bundleStatus`
 - `metadata`
 
-Use esta tool quando a regra depender de elegibilidade por cliente, produto/oferta CRM, bundle CRM, vigencia de contrato, ativacao, praca/regiao, janela relativa a contratacao, ou quando candidatos de billing precisarem ser desambiguados por contexto de cliente. `crmProductIds`, `crmOfferIds` e `bundleCrmIds` sao filtros opcionais, nao campos obrigatorios de toda regra. O mock de CRM e incremental: se a tool nao retornar dados suficientes, nao invente contratos ou IDs; registre a lacuna em `required_crm_checks` e explique que a auditoria depende de CRM.
+Use esta tool quando a regra depender de elegibilidade por cliente, produto/oferta CRM, bundle CRM, vigencia de contrato, ativacao, praca/regiao, janela relativa a contratacao, ou quando candidatos de billing precisarem ser desambiguados por contexto de cliente. `crmProductIds`, `crmOfferIds` e `bundleCrmIds` sao filtros opcionais, nao campos obrigatorios de toda regra. O mock de CRM e incremental: se a tool nao retornar dados suficientes, nao invente contratos ou IDs; registre a lacuna em `required_crm_checks` e explique que a auditoria depende de CRM. Se o dossie declarou Product ID, Offer ID, Bundle ID ou Service ID e a busca nao retornou contrato, preserve o ID em `externalConditions.crm.*FromDossier` e `declaredCrmIds`; a ausencia no mock nao apaga o ID declarado.
 
 ## Billing Identifier Search
 
@@ -409,6 +409,7 @@ Body:
     "chargecodeKeys": ["RMSPOTIFYVM"],
     "crmProductIds": ["CRM-SPOTIFY-NORDESTE"],
     "crmOfferIds": [],
+    "serviceIds": ["0101060500"],
     "bundleNames": [],
     "effectiveFrom": "2025-08-18",
     "effectiveTo": null,
@@ -427,7 +428,7 @@ Body:
 Returns:
 
 - `ruleSetKey`
-- `rules[]` with current rules in the same rule set, expected values, final predicates, chargecodes, CRM/bundle hints and `relationship`
+- `rules[]` with current rules in the same rule set, expected values, final predicates, chargecodes, service ids, CRM/bundle hints and `relationship`
 - `relationships[]` with parent/child, `relationshipType`, `priorityRank`, condition and rationale
 - `conflicts[]` for chargecode overlaps, whether coexistence is allowed and which disambiguators are missing
 - `suggestedPlacement` with recommended `relationshipType`, `priorityRankSuggestion`, options and rationale
