@@ -19,6 +19,19 @@ Candidate discovery must favor recall first, then qualification. It is acceptabl
    4. `bundle_offer_caption` and composed line identity.
    5. Broad semantic description recall.
 
+## Standard Offer Label Components
+
+For `Etiqueta padrao` / standard offer label documents, do not search invoice lines by the offer code itself. The `Codigo da oferta` is a CRM bundle id used to qualify customer applicability.
+
+1. Extract the offer code, validity window, abrangencia and each monetary component under `Precos individuais dos servicos da oferta conjunta`.
+2. For each component, search candidates using the component/product words against `chargecode_description` and `bill_message_text` first. Examples of component aliases:
+   - Telecom: `Telecom`, `Vivo Pos`, `Titular Vivo Pos`, plan name/GB amount shown in the offer.
+   - Servicos Digitais: named digital services listed in the offer.
+   - Parceiro Spotify Premium: `Spotify`, `Spotify Premium`.
+3. Use `productcatalog_description` and `bundle_offer_caption` only to qualify whether the line is part of the same commercial bundle. Bundle caption alone is not enough to apply a monetary rule.
+4. Put the offer code in `externalConditions.bundleEligibility.bundleCrmIds` and keep the final predicate on the charge line candidates, such as `chargecodeKeyIn` plus optional `bundleOfferCaptionIn`.
+5. If the component can only be audited as a sum of multiple component lines, use `calculation.kind: "bundle_component_sum"` and make the grouping explicit. If the engine cannot support it yet, mark the rule as `needs_review`/`not_supported_yet`.
+
 ## Product Family Guardrail
 
 `POST /agent-tools/billing/product-family-candidates` is mandatory for product-family repricing or broad scope rules. It searches invoice lines by product family and returns the line role:

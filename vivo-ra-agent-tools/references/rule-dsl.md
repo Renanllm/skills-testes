@@ -138,6 +138,9 @@ When the dossier is unclear, prefer invoice-line `c_effectivedate` for audit mat
         },
         "bundleEligibility": {
             "policy": "not_required | required_to_apply | optional_context",
+            "bundleCrmIds": ["IDs CRM de bundle/oferta bundle que qualificam aplicacao da regra, por exemplo Codigo da oferta em Etiqueta padrao"],
+            "bundleCrmIdsFromDossier": ["IDs de bundle/oferta bundle explicitamente declarados no dossie ou etiqueta padrao"],
+            "bundleCrmIdsConfirmedInMock": ["Subconjunto de IDs de bundle confirmado no CRM mock; [] quando nao confirmado"],
             "bundleNames": ["Vivo Total"],
             "requiredComponents": ["internet", "tv", "mobile"],
             "lostEligibilityWhenMissing": ["internet"],
@@ -281,6 +284,17 @@ CRM and bundle data are applicability inputs, not price sources. Use them only w
 - Use `activationDatePolicy: "relative_to_activation"` plus `eligibilityWindow` when the rule is based on the contract/activation date, for example three free months from subscription.
 - Use `externalConditions.bundleEligibility` when the rule applies only inside a bundle or depends on active bundle components. Bundle captions from invoices help discover candidates but do not prove eligibility alone.
 - If CRM/bundle information is not available in the mock, keep the rule and mark `dependencyCodes`, `requiredCrmChecks`, `disambiguation` and, when needed, `needs_bundle_eligibility`.
+
+## Standard Offer Labels / Etiqueta Padrao
+
+Quando o documento for uma Etiqueta padrao/oferta conjunta:
+
+- Set `documentType: "standard_offer_label"`.
+- Treat `Codigo da oferta` as a bundle CRM id. Preserve it in `externalConditions.bundleEligibility.bundleCrmIds`, `bundleCrmIdsFromDossier`, `externalConditions.crm.bundleCrmIds`, `bundleCrmIdsFromDossier`, and `declaredCrmIds` with `idType: "bundle_crm_id"`.
+- `Prazo de vigencia` controls `effectiveFrom`/`effectiveTo`; `Abrangencia` and comercializacao windows are external context/evidence.
+- Each monetary row under `Precos individuais dos servicos da oferta conjunta` can become one auditable rule if invoice candidate lines can represent that component. Use `target.entityKind: "bundle_component"`.
+- The final predicate still points to invoice charge lines, usually `chargecodeKeyIn` plus bundle/product context. The offer code itself is not expected to appear in invoice lines.
+- High-confidence application requires CRM mock evidence that the customer has the `bundleCrmId`. If the bundle is not confirmed, keep the line/rule as `needs_bundle_eligibility` or unknown applicability rather than applying it as billing-only.
 
 ## Candidate Predicate Rules
 

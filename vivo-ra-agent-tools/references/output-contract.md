@@ -35,7 +35,7 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
             "tipo_regra": "fixed_price | no_charge | discount | usage_tariff | prorata | bundle_composition | presence_rule | free_period | exclusion | migration_price | other_monetary",
             "status_confrontabilidade": "confrontable_deterministic | confrontable_after_mapping | needs_agent_qualification | needs_mapping | needs_usage_quantity | needs_reference_price | needs_crm | needs_subscription_event | needs_entitlement_inventory | needs_review | not_supported_yet | blocked",
             "alvo_nome": "",
-            "alvo_tipo": "product | variant | bundle | plan | offer | unknown",
+            "alvo_tipo": "product | variant | bundle | bundle_component | plan | offer | unknown",
             "escopo_afetado": "single_charge_line | product | bundle | plan | account | unknown",
             "campo_monetario": "c.chargetotalamount",
             "valid_from": "YYYY-MM-DD ou null",

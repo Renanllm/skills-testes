@@ -116,6 +116,7 @@ Body:
     "contractIds": ["mock-spotify-100001272"],
     "crmProductIds": ["0055013624"],
     "crmOfferIds": ["0055013625"],
+    "bundleCrmIds": ["VIV202500009127"],
     "productName": "Spotify",
     "productVariant": "Individual",
     "activeOn": "2026-04-21",
@@ -410,6 +411,7 @@ Body:
     "crmProductIds": ["CRM-SPOTIFY-NORDESTE"],
     "crmOfferIds": [],
     "serviceIds": ["0101060500"],
+    "bundleCrmIds": ["VIV202500009127"],
     "bundleNames": [],
     "effectiveFrom": "2025-08-18",
     "effectiveTo": null,
@@ -419,7 +421,8 @@ Body:
         "relationshipType": "sibling_of",
         "priorityRank": 80,
         "conditionJson": {
-            "crmProductIds": ["CRM-SPOTIFY-NORDESTE"]
+            "crmProductIds": ["CRM-SPOTIFY-NORDESTE"],
+            "bundleCrmIds": ["VIV202500009127"]
         }
     }
 }
