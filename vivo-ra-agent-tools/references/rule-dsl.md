@@ -196,6 +196,8 @@ Use `approvalStatus` as a binary gate for audit execution:
 - `approved`: the dossier explicitly says GO, approved, valid to proceed, or equivalent for that monetary claim/rule.
 - `not_approved`: the dossier says NOGO, canceled, not approved, no action, not started, still under discussion, or does not provide explicit approval.
 
+POC exception for standard commercial offer documents: if the source is an official `Etiqueta padrao` / standard offer label with offer code, validity and published prices, set `approvalStatus: "approved"` unless the document explicitly says NOGO, canceled, blocked, not approved, no action or still under discussion. Explain the evidence as official published offer terms.
+
 Do not infer approval from candidate quality, confidence, CRM data, or billing evidence. Those only qualify mapping and audit readiness.
 
 A `not_approved` rule can be mapped for traceability, but it must not generate deterministic financial impact. It should carry `approvalEvidence`, no active final predicate for execution, and a `ruleSituation`/`support` explanation that makes the block visible.
