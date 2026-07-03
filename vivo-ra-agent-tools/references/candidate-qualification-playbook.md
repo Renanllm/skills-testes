@@ -93,6 +93,8 @@ Set `ruleRelationship.relationshipType` using this discipline:
 - `fallback_of`: rule only applies when another condition is absent.
 - `requires_manual_review`: overlap exists, but priority/condition cannot be decided from dossier/tools.
 
+Set `ruleRelationship.priorityRank` by operational specificity. Lower numbers run first. A rule requiring CRM product/offer plus bundle CRM has higher precedence than a rule requiring only CRM product/offer; CRM-dependent rules have higher precedence than billing-only chargecode/default rules. If two rules share a chargecode and expected amount, the rule with the stricter eligibility context still gets the lower priorityRank.
+
 Use `highest_expected_amount_for_underbilling` only as a fallback in `stacking.competingRulePolicy` when the same billing context has competing recovery/underbilling rules and CRM/taxonomy cannot identify the right one. For customer credit or overbilling, leave the conflict explicit for review.
 
 ## Qualification Output Fragment

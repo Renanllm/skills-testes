@@ -222,6 +222,8 @@ Every monetary rule must include:
 - `ruleRelationship.relationshipType`, explaining whether this rule is independent, a default, a sibling, a superseder, a fallback, or requires review.
 - Existing-rule context from `/agent-tools/rules/context` and conflict context from `/agent-tools/rules/conflicts` before finalizing `ruleRelationship`.
 
+Priority is by specificity, with lower `priorityRank` values applied first. Use this order inside a shared `ruleSet`: CRM product/offer + bundle CRM; CRM product/offer or activation-window rules; billing-only chargecode/default price rules. The most specific rule keeps precedence even when it has the same expected amount as a broader rule.
+
 `highest_expected_amount_for_underbilling` is only a fallback for underbilling/recovery when two or more rules can govern the same billing context and CRM/taxonomy cannot disambiguate. Do not use it for customer-credit scenarios or as a universal priority rule.
 
 ## Confrontability Statuses
