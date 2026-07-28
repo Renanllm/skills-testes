@@ -11,7 +11,7 @@ Before qualifying, inspect:
 - sample invoice lines for each ambiguous bucket;
 - catalog entity aliases and relationships when relevant;
 - existing rules and conflicts.
-- CRM mock contracts when eligibility, bundle membership, product/offer CRM IDs, activation date or region can disambiguate the candidate.
+- CRM oficial contracts and invoice-enrichment links when eligibility, bundle membership, product/offer CRM IDs, SOC, service agreement, activation date, DDD or region can disambiguate the candidate.
 
 Candidate discovery must start with product/family names against `chargecode_description` and `bill_message_text`. Use `productcatalog_description`, bundle context, line identities, catalog aliases and inferred chargecode keys only to qualify the line role and decide include/exclude/pending. Do not use expected price, billed amount, `netAmount`, or amount windows to select candidates. Monetary values are used later to define and audit the rule, after the candidate lines have been found.
 
@@ -24,6 +24,8 @@ For every candidate set, choose one:
 - `pending`: potentially related but lacks enough evidence or mapping.
 
 Each decision needs a short rationale.
+
+When the rule has `selectionPolicy.strictCandidateEligibility: true`, a candidate can be `include` only if the candidate set has coverage after `applicability` filters. Candidates that match product text but fail CRM/SOC/contract/DDD/date eligibility must be `exclude` or `pending` with a reason such as `missing_strict_applicability_coverage`.
 
 Before deciding, classify the invoice line role when available:
 
@@ -64,10 +66,11 @@ For monetary line-level rules:
 
 1. Prefer `chargecodeKeyIn`.
 2. Use multiple charge codes when the same commercial product is represented by multiple billing variants.
-3. Use `productcatalogKeyIn` or `bundleOfferCaptionIn` only when chargecode cannot express the target and explain the risk.
-4. Do not use `descriptionContains` alone as final predicate.
-5. Validate with `/billing/qualification-validate`.
-6. If `isExecutable` is false, return `needs_mapping`.
+3. When the rule depends on CRM/SOC/contract/DDD/bundle/date, attach `predicate.applicability` to the final predicate. The chargecode says where to audit; `applicability` says which enriched invoice lines are eligible.
+4. Use `productcatalogKeyIn` or `bundleOfferCaptionIn` only when chargecode cannot express the target and explain the risk.
+5. Do not use `descriptionContains` alone as final predicate.
+6. Validate with `/billing/qualification-validate`.
+7. If `isExecutable` is false, return `needs_mapping`.
 
 ## Bundle Context Rule
 
@@ -94,6 +97,8 @@ Set `ruleRelationship.relationshipType` using this discipline:
 - `requires_manual_review`: overlap exists, but priority/condition cannot be decided from dossier/tools.
 
 Set `ruleRelationship.priorityRank` by operational specificity. Lower numbers run first. A rule requiring CRM product/offer plus bundle CRM has higher precedence than a rule requiring only CRM product/offer; CRM-dependent rules have higher precedence than billing-only chargecode/default rules. If two rules share a chargecode and expected amount, the rule with the stricter eligibility context still gets the lower priorityRank.
+
+For hierarchy lookup, use `/rules/context` in this order: CRM/SOC/contract identifiers first when present; specific bundle/offer second; product/family aliases last. Rank specificity as CRM/SOC/contract + DDD + date window before CRM/SOC/contract only; CRM/SOC/contract before bundle-specific; bundle-specific before product/family; product/family before billing-only chargecode rules.
 
 Use `highest_expected_amount_for_underbilling` only as a fallback in `stacking.competingRulePolicy` when the same billing context has competing recovery/underbilling rules and CRM/taxonomy cannot identify the right one. For customer credit or overbilling, leave the conflict explicit for review.
 

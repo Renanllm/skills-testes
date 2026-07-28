@@ -1,4 +1,4 @@
-# Rule DSL v0.5
+# Rule DSL v0.6
 
 Represent dossier statements that are monetary, invoice-confrontable, or intentionally mapped as unsupported.
 
@@ -71,7 +71,25 @@ When the dossier is unclear, prefer invoice-line `c_effectivedate` for audit mat
         ],
         "productcatalogKeyIn": ["candidate only"],
         "bundleOfferCaptionIn": ["candidate only"],
-        "descriptionContains": "recall only, not final by itself"
+        "descriptionContains": "recall only, not final by itself",
+        "applicability": {
+            "crmProductcatalogIdIn": ["0055013624"],
+            "billingOfferSocCodeIn": ["SOC123"],
+            "serviceAgreementKeyIn": ["79476668_2026631750_6157"],
+            "assignedBillingOfferKeyIn": ["276509701"],
+            "subscriberDddIn": ["13"],
+            "subscriberStatusKeyIn": ["A"],
+            "billingOfferStatusIn": ["A"],
+            "bundleOfferCaptionIn": ["VIVO POS SPOTIFY 25GB"],
+            "billingEffectiveDate": {
+                "from": "2026-04-01",
+                "to": null
+            },
+            "serviceEffectiveDate": {
+                "activeOn": "2026-04-21"
+            },
+            "requireAll": true
+        }
     },
     "calculation": {
         "kind": "fixed_amount | no_charge | discount_amount | discount_percent | usage_event_tariff | usage_duration_tariff | usage_volume_tariff | daily_rate | prorata_by_period | bundle_component_sum | forbidden_charge | presence_required | custom_logic",
@@ -103,26 +121,60 @@ When the dossier is unclear, prefer invoice-line `c_effectivedate` for audit mat
         "requiredChecks": ["activation_date"],
         "rationale": "Como a data de ativacao/contratacao controla a aplicacao da regra."
     },
+    "applicability": {
+        "crmProductcatalogIdIn": ["IDs CRM/productcatalog oficiais observados nos vinculos da fatura"],
+        "billingOfferSocCodeIn": ["SOC da oferta de billing/CRM"],
+        "serviceAgreementKeyIn": ["serviceagreementkey quando a regra for por contrato"],
+        "assignedBillingOfferKeyIn": ["assigned billing offer key quando o bundle/oferta for identificavel por contrato"],
+        "subscriberDddIn": ["13"],
+        "subscriberStatusKeyIn": ["A"],
+        "billingOfferStatusIn": ["A"],
+        "bundleOfferCaptionIn": ["caption exata do bundle quando necessaria"],
+        "billingEffectiveDate": {
+            "from": "YYYY-MM-DD",
+            "to": null,
+            "activeOn": null
+        },
+        "serviceEffectiveDate": {
+            "from": null,
+            "to": null,
+            "activeOn": "YYYY-MM-DD"
+        },
+        "requireAll": true
+    },
+    "selectionPolicy": {
+        "scopeKind": "crm_product_specific | bundle_specific | bundle_component | locality_specific | product_family | billing_only",
+        "candidateSearchOrder": ["crm_id", "soc", "service_agreement", "bundle", "bundle_caption", "ddd", "effective_date", "product_family", "chargecode"],
+        "strictCandidateEligibility": true,
+        "rationale": "Por que candidatos sem esses vinculos nao podem entrar na regra."
+    },
     "externalConditions": {
         "crm": {
             "policy": "not_required | required_to_apply | required_to_disambiguate | optional_context",
-            "crmProductIds": ["IDs CRM de produto usados pela auditoria, incluindo IDs declarados no dossie ou confirmados no CRM mock; use [] quando ausentes"],
-            "crmOfferIds": ["IDs CRM de oferta usados pela auditoria, incluindo IDs declarados no dossie ou confirmados no CRM mock; use [] quando ausentes"],
-            "bundleCrmIds": ["IDs CRM de bundle/oferta bundle usados pela auditoria, incluindo IDs declarados no dossie ou confirmados no CRM mock; use [] quando ausentes"],
-            "crmProductIdsFromDossier": ["Product IDs / IDs CRM de produto explicitamente declarados no dossie; preserve mesmo se o CRM mock nao confirmar"],
-            "crmOfferIdsFromDossier": ["Offer IDs / IDs de oferta explicitamente declarados no dossie; preserve mesmo se o CRM mock nao confirmar"],
-            "bundleCrmIdsFromDossier": ["Bundle IDs / IDs de oferta bundle explicitamente declarados no dossie; preserve mesmo se o CRM mock nao confirmar"],
+            "crmProductIds": ["IDs CRM de produto usados pela auditoria, incluindo IDs declarados no dossie ou confirmados no CRM oficial; use [] quando ausentes"],
+            "crmOfferIds": ["IDs CRM de oferta usados pela auditoria, incluindo IDs declarados no dossie ou confirmados no CRM oficial; use [] quando ausentes"],
+            "bundleCrmIds": ["IDs CRM de bundle/oferta bundle usados pela auditoria, incluindo IDs declarados no dossie ou confirmados no CRM oficial; use [] quando ausentes"],
+            "crmProductIdsFromDossier": ["Product IDs / IDs CRM de produto explicitamente declarados no dossie; preserve mesmo se o CRM oficial nao confirmar"],
+            "crmOfferIdsFromDossier": ["Offer IDs / IDs de oferta explicitamente declarados no dossie; preserve mesmo se o CRM oficial nao confirmar"],
+            "bundleCrmIdsFromDossier": ["Bundle IDs / IDs de oferta bundle explicitamente declarados no dossie; preserve mesmo se o CRM oficial nao confirmar"],
             "serviceIdsFromDossier": ["Service IDs explicitamente declarados no dossie; preserve como service_id, nao converta automaticamente para produto/oferta"],
-            "crmProductIdsConfirmedInMock": ["Subconjunto de Product IDs confirmado no CRM mock; [] quando nao confirmado"],
-            "crmOfferIdsConfirmedInMock": ["Subconjunto de Offer IDs confirmado no CRM mock; [] quando nao confirmado"],
-            "bundleCrmIdsConfirmedInMock": ["Subconjunto de Bundle IDs confirmado no CRM mock; [] quando nao confirmado"],
-            "serviceIdsConfirmedInMock": ["Subconjunto de Service IDs confirmado no CRM mock; [] quando nao confirmado"],
+            "crmProductIdsConfirmedInMock": ["Subconjunto de Product IDs confirmado no CRM oficial; [] quando nao confirmado"],
+            "crmOfferIdsConfirmedInMock": ["Subconjunto de Offer IDs confirmado no CRM oficial; [] quando nao confirmado"],
+            "bundleCrmIdsConfirmedInMock": ["Subconjunto de Bundle IDs confirmado no CRM oficial; [] quando nao confirmado"],
+            "serviceIdsConfirmedInMock": ["Subconjunto de Service IDs confirmado no CRM oficial; [] quando nao confirmado"],
+            "crmProductcatalogIdIn": ["IDs CRM/productcatalog oficiais vindos da fatura enriquecida"],
+            "billingOfferSocCodeIn": ["SOCs oficiais da oferta"],
+            "serviceAgreementKeyIn": ["serviceagreementkey oficial"],
+            "assignedBillingOfferKeyIn": ["assigned billing offer key oficial"],
+            "subscriberDddIn": ["DDD da assinatura"],
+            "subscriberStatusKeyIn": ["status atual da assinatura"],
+            "billingOfferStatusIn": ["status da oferta de billing"],
             "declaredCrmIds": [
                 {
                     "id": "ID exatamente como aparece no dossie",
-                    "idType": "crm_product_id | crm_offer_id | bundle_crm_id | service_id | ps_id | unknown_crm_id",
-                    "source": "dossier | crm_mock",
-                    "verificationStatus": "declared_unverified | crm_confirmed | not_found_in_crm_mock",
+                    "idType": "crm_product_id | crm_offer_id | crm_productcatalog_id | billing_offer_soc_code | service_agreement_key | bundle_crm_id | service_id | ps_id | unknown_crm_id",
+                    "source": "dossier | crm | crm_mock | billing",
+                    "verificationStatus": "declared_unverified | crm_confirmed | billing_confirmed | not_found_in_crm | not_found_in_crm_mock",
                     "evidence": {
                         "source": "20733.pdf",
                         "page": 1,
@@ -140,7 +192,7 @@ When the dossier is unclear, prefer invoice-line `c_effectivedate` for audit mat
             "policy": "not_required | required_to_apply | optional_context",
             "bundleCrmIds": ["IDs CRM de bundle/oferta bundle que qualificam aplicacao da regra, por exemplo Codigo da oferta em Etiqueta padrao"],
             "bundleCrmIdsFromDossier": ["IDs de bundle/oferta bundle explicitamente declarados no dossie ou etiqueta padrao"],
-            "bundleCrmIdsConfirmedInMock": ["Subconjunto de IDs de bundle confirmado no CRM mock; [] quando nao confirmado"],
+            "bundleCrmIdsConfirmedInMock": ["Subconjunto de IDs de bundle confirmado no CRM oficial; [] quando nao confirmado"],
             "bundleNames": ["Vivo Total"],
             "requiredComponents": ["internet", "tv", "mobile"],
             "lostEligibilityWhenMissing": ["internet"],
@@ -278,16 +330,19 @@ If required columns or external data are missing, do not force a deterministic r
 
 CRM and bundle data are applicability inputs, not price sources. Use them only when the dossier already contains a monetary claim such as fixed price, no charge, discount, usage tariff, or a free-period condition.
 
-- `crmProductIds`, `crmOfferIds` and `bundleCrmIds` are optional. Extract them when the dossier or CRM mock provides them. Do not invent IDs; use empty arrays and record `requiredCrmChecks` when absent.
-- IDs explicitly declared in the dossier must be preserved even if CRM mock has no matching contract. Put them in the canonical audit arrays when the label is clear (`crmProductIds`, `crmOfferIds`, `bundleCrmIds`) and always mirror them in `*FromDossier` plus `declaredCrmIds` with evidence.
+- `crmProductIds`, `crmOfferIds` and `bundleCrmIds` are optional. Extract them when the dossier or CRM oficial provides them. Do not invent IDs; use empty arrays and record `requiredCrmChecks` when absent.
+- Prefer the official invoice-enrichment identifiers for deterministic matching when they exist: `applicability.crmProductcatalogIdIn`, `billingOfferSocCodeIn`, `serviceAgreementKeyIn`, `assignedBillingOfferKeyIn`, `subscriberDddIn`, `subscriberStatusKeyIn`, `billingOfferStatusIn`, `billingEffectiveDate` and `serviceEffectiveDate`.
+- Mirror line-level applicability both at top-level `rule_draft_json.applicability` and inside `predicate.applicability` for deterministic line filtering.
+- When a dossier has a clear CRM/product/SOC/contract identifier, candidate discovery must be strict: include only candidate sets with invoice-line coverage after those filters.
+- IDs explicitly declared in the dossier must be preserved even if CRM oficial has no matching contract. Put them in the canonical audit arrays when the label is clear (`crmProductIds`, `crmOfferIds`, `bundleCrmIds`) and always mirror them in `*FromDossier` plus `declaredCrmIds` with evidence.
 - `Service ID` is not the same as product/offer ID. Store it in `serviceIdsFromDossier` and `declaredCrmIds` with `idType: "service_id"`. Use `requiredCrmChecks` if the service-to-product/offer relation still needs confirmation.
 - If the dossier shows only a generic `ID` inside "Detalhes da Oferta", "Oferta", "Service Name" or an equivalent commercial block, preserve it as ambiguous instead of dropping product context. For this POC, mirror the ID into both `crmProductIdsFromDossier` and `crmOfferIdsFromDossier` when it may identify either the product or the offer, and explain the ambiguity in `declaredCrmIds[].rationale`.
-- Use `*ConfirmedInMock` only for ids actually returned by CRM mock. Empty confirmed arrays do not invalidate dossier-declared ids.
+- Use `*ConfirmedInMock` only for ids actually returned by CRM oficial. Empty confirmed arrays do not invalidate dossier-declared ids.
 - Use `externalConditions.crm.policy: "required_to_apply"` when CRM decides whether the rule applies to a customer or invoice line.
 - Use `externalConditions.crm.policy: "required_to_disambiguate"` when multiple commercial rules can share the same chargecode and CRM decides which rule applies.
 - Use `activationDatePolicy: "relative_to_activation"` plus `eligibilityWindow` when the rule is based on the contract/activation date, for example three free months from subscription.
 - Use `externalConditions.bundleEligibility` when the rule applies only inside a bundle or depends on active bundle components. Bundle captions from invoices help discover candidates but do not prove eligibility alone.
-- If CRM/bundle information is not available in the mock, keep the rule and mark `dependencyCodes`, `requiredCrmChecks`, `disambiguation` and, when needed, `needs_bundle_eligibility`.
+- If CRM/bundle information is not available in the official enriched data, keep the rule and mark `dependencyCodes`, `requiredCrmChecks`, `disambiguation` and, when needed, `needs_bundle_eligibility`.
 
 ## Standard Offer Labels / Etiqueta Padrao
 
@@ -298,7 +353,7 @@ Quando o documento for uma Etiqueta padrao/oferta conjunta:
 - `Prazo de vigencia` controls `effectiveFrom`/`effectiveTo`; `Abrangencia` and comercializacao windows are external context/evidence.
 - Each monetary row under `Precos individuais dos servicos da oferta conjunta` can become one auditable rule if invoice candidate lines can represent that component. Use `target.entityKind: "bundle_component"`.
 - The final predicate still points to invoice charge lines, usually `chargecodeKeyIn` plus bundle/product context. The offer code itself is not expected to appear in invoice lines.
-- High-confidence application requires CRM mock evidence that the customer has the `bundleCrmId`. If the bundle is not confirmed, keep the line/rule as `needs_bundle_eligibility` or unknown applicability rather than applying it as billing-only.
+- High-confidence application requires CRM oficial or invoice-enrichment evidence that the customer has the expected bundle/SOC/contract. If the bundle is not confirmed, keep the line/rule as `needs_bundle_eligibility` or unknown applicability rather than applying it as billing-only.
 
 ## Candidate Predicate Rules
 

@@ -2,7 +2,7 @@
 
 Retorne um unico objeto JSON. Nao inclua texto fora do JSON.
 
-O envelope externo deve usar os nomes de campo em portugues declarados no output format do workflow. As chaves tecnicas da DSL v0.5 devem ficar preservadas dentro dos campos JSON serializados, como `rule_draft_json`, `calculation_json`, `support_json`, `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `predicado_final_json`.
+O envelope externo deve usar os nomes de campo em portugues declarados no output format do workflow. As chaves tecnicas da DSL v0.6 devem ficar preservadas dentro dos campos JSON serializados, como `rule_draft_json`, `calculation_json`, `support_json`, `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `predicado_final_json`.
 
 ```json
 {
@@ -12,7 +12,9 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
         "codigo": "20131",
         "titulo": "Titulo inferido do dossie",
         "approval_status": "approved | not_approved",
-        "approval_evidence": "Trecho curto que comprova GO/NOGO/aprovacao/nao aprovacao. Use null se inexistente."
+        "approval_evidence": "Trecho curto que comprova GO/NOGO/aprovacao/nao aprovacao. Use null se inexistente.",
+        "invalid_reason_code": "missing_clear_approval | no_direct_financial_impact | not_invoice_auditable | null",
+        "invalid_reason": "Motivo auditavel quando o dossie nao deve gerar regra ativa, ou null."
     },
     "resumo": {
         "narrativa": "Resumo curto em portugues brasileiro.",
@@ -26,6 +28,9 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
     "regras_financeiras": [
         {
             "source_claim_id": "claim-001",
+            "claim_disposition": "rule_created | not_created",
+            "not_created_reason_code": null,
+            "not_created_reason": null,
             "nome_regra": "",
             "approval_status": "approved | not_approved",
             "approval_evidence": "Trecho curto do dossie que comprova a aprovacao ou nao aprovacao da regra.",
@@ -49,6 +54,8 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
             "support_json": "{\"confrontabilityStatus\":\"confrontable_deterministic\",\"unsupportedReasons\":[]}",
             "external_conditions_json": "{\"crm\":{\"policy\":\"not_required\",\"crmProductIds\":[],\"crmOfferIds\":[],\"bundleCrmIds\":[],\"crmProductIdsFromDossier\":[],\"crmOfferIdsFromDossier\":[],\"bundleCrmIdsFromDossier\":[],\"serviceIdsFromDossier\":[],\"crmProductIdsConfirmedInMock\":[],\"crmOfferIdsConfirmedInMock\":[],\"bundleCrmIdsConfirmedInMock\":[],\"serviceIdsConfirmedInMock\":[],\"declaredCrmIds\":[]},\"bundleEligibility\":{\"policy\":\"not_required\"}}",
             "eligibility_window_json": "{\"anchor\":\"crm.activation_date\",\"durationMonths\":3,\"invoiceDateField\":\"period_start_date\",\"expectedDuringWindow\":{\"amount\":0,\"calculationKind\":\"no_charge\"},\"requiredChecks\":[\"activation_date\"]}",
+            "applicability_json": "{\"crmProductcatalogIdIn\":[\"0055013624\"],\"subscriberDddIn\":[\"13\"],\"billingEffectiveDate\":{\"from\":\"2026-04-01\",\"to\":null},\"requireAll\":true}",
+            "selection_policy_json": "{\"scopeKind\":\"crm_product_specific\",\"candidateSearchOrder\":[\"crm_id\",\"ddd\",\"effective_date\",\"chargecode\"],\"strictCandidateEligibility\":true}",
             "rule_set_json": "{\"key\":\"product:vivo-recado\",\"targetProductName\":\"Vivo Recado\",\"targetChargecodes\":[\"RMVIVORECADM\"]}",
             "rule_relationship_json": "{\"relationshipType\":\"independent\",\"priorityRank\":100,\"rationale\":\"Sem regra concorrente identificada.\"}",
             "chargecode_candidates_json": "[{\"chargecodeKey\":\"RMVIVORECADM\",\"chargecodeDescription\":\"Vivo Recado\",\"decision\":\"include\",\"sourcePriority\":\"chargecode_description\"}]",
@@ -76,6 +83,9 @@ O envelope externo deve usar os nomes de campo em portugues declarados no output
     "itens_mapeados_nao_suportados": [
         {
             "source_claim_id": "claim-002",
+            "claim_disposition": "not_created",
+            "not_created_reason_code": "not_invoice_auditable",
+            "not_created_reason": "A declaracao tem relevancia comercial, mas nao altera diretamente valor de fatura auditavel.",
             "titulo": "",
             "approval_status": "approved | not_approved",
             "approval_evidence": "Trecho curto do dossie que comprova a aprovacao ou nao aprovacao do item.",
@@ -228,7 +238,8 @@ Antes de retornar:
 9. Toda regra financeira deve ter `situacao_regra`, `dependency_codes`, `rule_set_json`, `rule_relationship_json` e os campos equivalentes dentro de `rule_draft_json`.
 10. `situacao_regra` deve ser apenas `executable`, `needs_review` ou `not_applicable`; status tecnicos ficam em `dependency_codes` e `support_json`.
 11. CRM, bundle CRM e elegibilidade de bundle devem aparecer em `external_conditions_json` quando forem necessarios para aplicar ou desambiguar a regra, mas nunca devem criar preco/formula sem declaracao monetaria do dossie. IDs CRM sao opcionais: use arrays vazios quando ausentes e registre `required_crm_checks`.
-12. Todo ID explicitamente declarado no dossie deve ser preservado em `externalConditions.crm` dentro de `rule_draft_json` e no espelho `external_conditions_json`, mesmo que o CRM mock nao retorne contrato. Use `crmProductIdsFromDossier`, `crmOfferIdsFromDossier`, `bundleCrmIdsFromDossier`, `serviceIdsFromDossier` e `declaredCrmIds` com evidencia. Quando o rotulo do ID for claro, tambem coloque o ID no array canonico usado pela auditoria (`crmProductIds`, `crmOfferIds` ou `bundleCrmIds`). Use `*ConfirmedInMock` apenas para IDs confirmados pela tool de CRM.
+12. Todo ID explicitamente declarado no dossie deve ser preservado em `externalConditions.crm` dentro de `rule_draft_json` e no espelho `external_conditions_json`, mesmo que o CRM oficial nao retorne contrato. Use `crmProductIdsFromDossier`, `crmOfferIdsFromDossier`, `bundleCrmIdsFromDossier`, `serviceIdsFromDossier` e `declaredCrmIds` com evidencia. Quando o rotulo do ID for claro, tambem coloque o ID no array canonico usado pela auditoria (`crmProductIds`, `crmOfferIds` ou `bundleCrmIds`). Use `*ConfirmedInMock` apenas para IDs confirmados pela tool de CRM.
+12.1. Quando a regra tiver ID CRM/SOC/contrato/DDD/bundle/vigencia aplicavel, preencha `applicability` e `selectionPolicy` dentro de `rule_draft_json`, espelhe em `applicability_json` e `selection_policy_json`, e replique `predicate.applicability` no `predicado_final_json`.
 13. Toda regra `confrontable_deterministic` deve ter predicado executavel.
 14. Toda regra financeira confrontavel deve carregar a vigencia do dossie em `valid_from`/`valid_to` no envelope e em `effectiveFrom`/`effectiveTo` dentro de `rule_draft_json`. Use `null` para data fim ausente.
 15. Toda regra financeira com gratuidade/desconto/janela relativa a contratacao ou ativacao deve carregar `eligibilityWindow` dentro de `rule_draft_json`; se usar campo espelho, preencha tambem `eligibility_window_json`.
@@ -237,6 +248,7 @@ Antes de retornar:
 18. Todo candidato deve preservar `candidate_source_priority`, `line_role`, `billing_context_json`, `matched_on`, sinais positivos/negativos e racional.
 19. Toda regra deve preservar `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `required_crm_checks` quando esses dados forem conhecidos ou quando faltarem dados externos.
 20. Toda declaracao monetaria sem suporte deterministico deve aparecer em `itens_mapeados_nao_suportados` ou em `regras_financeiras` com `status_confrontabilidade` nao deterministico.
-21. Todo item em `itens_mapeados_nao_suportados` derivado de declaracao monetaria deve preservar `source_claim_id`.
+21. Todo item em `itens_mapeados_nao_suportados` derivado de declaracao monetaria deve preservar `source_claim_id`, `claim_disposition: "not_created"`, `not_created_reason_code` e `not_created_reason`.
+21.1. Se o dossie nao tiver aprovacao clara, preencha `dossie.invalid_reason_code: "missing_clear_approval"` e `dossie.invalid_reason`. Se uma claim nao tiver implicacao financeira direta, use `not_created_reason_code: "no_direct_financial_impact"` ou `not_invoice_auditable`.
 22. Toda falha de tool deve aparecer em `status: "blocked"` ou `perguntas_abertas_globais`.
 23. Nenhum campo deve conter o bearer token.

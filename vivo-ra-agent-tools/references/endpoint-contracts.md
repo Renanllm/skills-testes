@@ -32,7 +32,25 @@ Use this shape for invoice-line predicates:
     ],
     "productcatalogKeyIn": ["1125259208"],
     "bundleOfferCaptionIn": ["Servico Digital 9 TBF"],
-    "descriptionContains": "Vivo Recado"
+    "descriptionContains": "Vivo Recado",
+    "applicability": {
+        "crmProductcatalogIdIn": ["0055013624"],
+        "billingOfferSocCodeIn": ["SOC123"],
+        "serviceAgreementKeyIn": ["79476668_2026631750_6157"],
+        "assignedBillingOfferKeyIn": ["276509701"],
+        "subscriberDddIn": ["13"],
+        "subscriberStatusKeyIn": ["A"],
+        "billingOfferStatusIn": ["A"],
+        "bundleOfferCaptionIn": ["VIVO POS SPOTIFY 25GB"],
+        "billingEffectiveDate": {
+            "from": "2026-04-01",
+            "to": null
+        },
+        "serviceEffectiveDate": {
+            "activeOn": "2026-04-21"
+        },
+        "requireAll": true
+    }
 }
 ```
 
@@ -100,7 +118,7 @@ GET /agent-tools/catalog/entities/:entityId
 
 Returns one entity with aliases, variants, relationships, source data, and invoice stats.
 
-## CRM Mock Contract Search
+## CRM Contract Search
 
 ```http
 POST /agent-tools/crm/contracts/search
@@ -117,6 +135,13 @@ Body:
     "crmProductIds": ["0055013624"],
     "crmOfferIds": ["0055013625"],
     "bundleCrmIds": ["VIV202500009127"],
+    "serviceAgreementKeys": ["79476668_2026631750_6157"],
+    "billingOfferSocCodes": ["SOC123"],
+    "assignedBillingOfferKeys": ["276509701"],
+    "subscriberDdds": ["13"],
+    "subscriberStatusKeys": ["A"],
+    "billingOfferStatuses": ["A"],
+    "bundleOfferCaptions": ["VIVO POS SPOTIFY 25GB"],
     "productName": "Spotify",
     "productVariant": "Individual",
     "activeOn": "2026-04-21",
@@ -156,7 +181,7 @@ Each contract includes:
 - `bundleStatus`
 - `metadata`
 
-Use esta tool quando a regra depender de elegibilidade por cliente, produto/oferta CRM, bundle CRM, vigencia de contrato, ativacao, praca/regiao, janela relativa a contratacao, ou quando candidatos de billing precisarem ser desambiguados por contexto de cliente. `crmProductIds`, `crmOfferIds` e `bundleCrmIds` sao filtros opcionais, nao campos obrigatorios de toda regra. O mock de CRM e incremental: se a tool nao retornar dados suficientes, nao invente contratos ou IDs; registre a lacuna em `required_crm_checks` e explique que a auditoria depende de CRM. Se o dossie declarou Product ID, Offer ID, Bundle ID ou Service ID e a busca nao retornou contrato, preserve o ID em `externalConditions.crm.*FromDossier` e `declaredCrmIds`; a ausencia no mock nao apaga o ID declarado.
+Use esta tool quando a regra depender de elegibilidade por cliente, produto/oferta CRM, SOC, `serviceAgreementKey`, bundle CRM, vigencia de contrato, ativacao, DDD, janela relativa a contratacao, ou quando candidatos de billing precisarem ser desambiguados por contexto de cliente. `crmProductIds`, `crmOfferIds`, `bundleCrmIds`, `billingOfferSocCodes`, `serviceAgreementKeys` e `subscriberDdds` sao filtros opcionais, nao campos obrigatorios de toda regra. O CRM oficial vem das faturas enriquecidas: se a tool nao retornar dados suficientes, nao invente contratos ou IDs; registre a lacuna em `required_crm_checks` e explique que a auditoria depende de CRM. Se o dossie declarou Product ID, Offer ID, Bundle ID ou Service ID e a busca nao retornou contrato, preserve o ID em `externalConditions.crm.*FromDossier` e `declaredCrmIds`; a ausencia no CRM oficial nao apaga o ID declarado.
 
 ## Billing Identifier Search
 
@@ -240,6 +265,24 @@ Body:
     "entityKinds": ["product"],
     "identifiers": ["RMVIVORECADM", "RMVIVORECADVT"],
     "strategy": "high_recall",
+    "applicability": {
+        "crmProductcatalogIdIn": ["0055013624"],
+        "subscriberDddIn": ["13"],
+        "billingEffectiveDate": {
+            "from": "2026-04-01",
+            "to": null
+        },
+        "requireAll": true
+    },
+    "eligibilityFilters": {
+        "crmProductcatalogIdIn": ["0055013624"],
+        "subscriberDddIn": ["13"]
+    },
+    "selectionPolicy": {
+        "scopeKind": "crm_product_specific",
+        "candidateSearchOrder": ["crm_id", "ddd", "effective_date", "chargecode"],
+        "strictCandidateEligibility": true
+    },
     "limit": 20
 }
 ```
@@ -253,10 +296,13 @@ Returns:
 - `candidateBuckets.semanticDescriptionCandidates[]`
 - `targetAliases[]` and `derivedTargetAliases[]`
 - catalog and billing candidates
+- `strictApplicability` when candidate sets were filtered by CRM/SOC/contract/DDD/date coverage
 - `recommendedNextToolCalls[]`
 - warnings and guidance
 
 Use this after drafting the target. It intentionally favors recall and can include false positives. Candidate discovery prioritizes `chargecode_description` and `bill_message_text`, then uses product description, bundle context and inferred chargecode keys as qualification context; it must not use expected price, billed amount, `netAmount`, or amount windows as discovery criteria.
+
+If the dossier has a clear CRM Product ID, SOC, `serviceAgreementKey`, DDD, bundle or effective date, pass it as `applicability`/`eligibilityFilters`. With `selectionPolicy.strictCandidateEligibility: true`, only candidates with invoice-line coverage after those filters can be included.
 
 When building the final candidate context, copy all available candidate fields such as `candidateSetKind`, `predicate`, `chargecodeDescription`, `billMessageText`, `lineCount`, `invoiceCount`, `netAmount`, `matchedOn`, `matchedAliases`, `matchedAliasSources`, `candidateApplicationFilters`, `candidateSourcePriority`, `lineRoleSuggestion`, `positiveSignals`, `negativeSignals`, `recommendedDecision`, `ambiguityReason` and `risk`.
 
@@ -274,6 +320,14 @@ Body:
     "targetAliases": ["Disney Plus", "Disney Padrão"],
     "excludedVariants": ["Anúncios"],
     "includeBundleContext": true,
+    "applicability": {
+        "billingOfferSocCodeIn": ["SOC123"],
+        "bundleOfferCaptionIn": ["VIVO POS SPOTIFY 25GB"],
+        "requireAll": true
+    },
+    "eligibilityFilters": {
+        "billingOfferSocCodeIn": ["SOC123"]
+    },
     "limit": 30
 }
 ```
@@ -412,6 +466,17 @@ Body:
     "crmOfferIds": [],
     "serviceIds": ["0101060500"],
     "bundleCrmIds": ["VIV202500009127"],
+    "billingOfferSocCodes": ["SOC123"],
+    "serviceAgreementKeys": ["79476668_2026631750_6157"],
+    "subscriberDdds": ["13"],
+    "applicability": {
+        "crmProductcatalogIdIn": ["0055013624"],
+        "subscriberDddIn": ["13"],
+        "billingEffectiveDate": {
+            "from": "2026-04-01",
+            "to": null
+        }
+    },
     "bundleNames": [],
     "effectiveFrom": "2025-08-18",
     "effectiveTo": null,
@@ -438,7 +503,7 @@ Returns:
 - `validation.isValid` and `validation.errors[]`, including `cycle_detected`
 - `gaps[]`
 
-Use this after candidate qualification and before finalizing `ruleSet`, `ruleRelationship` and `stacking`. Prefer this endpoint over `/rules/existing` when the agent needs precedence context because it expands from matched rules to the whole rule set and validates obvious cycles. Same-chargecode rules can coexist when CRM, bundle, region, effective window or another explicit condition disambiguates them.
+Use this after candidate qualification and before finalizing `ruleSet`, `ruleRelationship` and `stacking`. Prefer this endpoint over `/rules/existing` when the agent needs precedence context because it expands from matched rules to the whole rule set and validates obvious cycles. Search by CRM/SOC/contract first when the dossier has one; then by specific bundle; then by product/family only as fallback. Same-chargecode rules can coexist when CRM, bundle, DDD, effective window or another explicit condition disambiguates them.
 
 ## Rule Applicability Preview
 
@@ -458,7 +523,7 @@ Body:
 }
 ```
 
-Use this after `/rules/context` when a rule set has CRM, bundle or competing-rule ambiguity. The preview does not calculate final money. It selects invoice candidate lines from the rule predicate, respects the rule `auditUnit` (`single_charge_line` or `monthly_charge_group`), consults the CRM mock when requested, and returns the rule that currently applies to each billing unit.
+Use this after `/rules/context` when a rule set has CRM, bundle or competing-rule ambiguity. The preview does not calculate final money. It selects invoice candidate lines from the rule predicate, applies `predicate.applicability`, respects the rule `auditUnit` (`single_charge_line` or `monthly_charge_group`), consults the CRM oficial when requested, and returns the rule that currently applies to each billing unit.
 
 Returns:
 
@@ -473,7 +538,7 @@ Returns:
 
 Interpretation:
 
-- `applicationBasis: "crm_confirmed"` or `"bundle_confirmed"` means the mock CRM/bundle data confirms which rule wins.
+- `applicationBasis: "crm_confirmed"` or `"bundle_confirmed"` means the CRM oficial/bundle data confirms which rule wins.
 - `applicationBasis: "needs_crm"` means the billing line exists, but the rule requires CRM evidence that is missing.
 - `applicationBasis: "needs_bundle_eligibility"` means the line is a candidate, but active bundle eligibility was not proven.
 - `applicationBasis: "billing_only"` means no CRM/bundle condition was required for that rule.
@@ -567,7 +632,7 @@ Body:
 }
 ```
 
-Use this after rule validation. Conflicts do not always block the rule, but they require precedence reasoning or human review. If conflict priority cannot be resolved from dossier, CRM mock or existing-rule metadata, set `ruleRelationship.relationshipType: "requires_manual_review"` and explain the unresolved condition.
+Use this after rule validation. Conflicts do not always block the rule, but they require precedence reasoning or human review. If conflict priority cannot be resolved from dossier, CRM oficial or existing-rule metadata, set `ruleRelationship.relationshipType: "requires_manual_review"` and explain the unresolved condition.
 
 ## Audit Preview
 
@@ -626,4 +691,4 @@ Body:
 }
 ```
 
-Returns `lines[]` with invoice key, customer key, product catalog key, product description, bundle caption, chargecode key, amount, and effective date.
+Returns `lines[]` with invoice key, customer key, product catalog key, product description, bundle caption, chargecode key, amount, effective date, and `crmLinks[]` from the enriched invoice base. Each CRM link can include CRM/productcatalog id, product description, SOC code/name, `serviceAgreementKey`, agreement id, assigned billing offer key, statuses, service dates, DDD, subscriber status and activation date.

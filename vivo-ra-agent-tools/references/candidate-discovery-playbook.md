@@ -6,18 +6,35 @@ Candidate discovery must favor recall first, then qualification. It is acceptabl
 
 1. Start from the dossier target name, such as `Vivo Recado`.
 2. Search catalog with likely kinds: `product`, `variant`, `bundle`, `plan`, `offer`.
-3. Call candidate discovery with `strategy: "high_recall"` and `limit` between 10 and 20.
+3. Before calling candidate discovery, extract strict applicability when present: CRM Product ID/ProductCatalog ID, SOC, `serviceAgreementKey`, assigned billing offer key, bundle/offer code, bundle caption, DDD/locality and effective date window.
+4. Call candidate discovery with `strategy: "high_recall"` and `limit` between 10 and 20.
    - When the dossier uses a commercial name but the catalog/billing may use aliases, pass `targetAliases`.
    - If aliases are not provided, the server derives aliases from catalog aliases and billing identifiers found in the catalog search.
-4. If the dossier names a known identifier, pass it in `identifiers`.
-5. If the dossier applies broadly to a product family, a reprice, a permanent free rule, or says "todos os canais", "todos os IDs", "todos os fluxos" or equivalent, call `POST /agent-tools/billing/product-family-candidates`.
+   - When strict applicability exists, pass `applicability`, mirror it in `eligibilityFilters`, and set `selectionPolicy.strictCandidateEligibility: true`.
+   - Candidate sets with no invoice-line coverage after the strict filters must not be included in the final predicate.
+5. If the dossier names a known billing identifier, pass it in `identifiers`. If it names a CRM/SOC/contract identifier, put it in `applicability`/`eligibilityFilters` instead of treating it as a chargecode.
+6. If the dossier applies broadly to a product family, a reprice, a permanent free rule, or says "todos os canais", "todos os IDs", "todos os fluxos" or equivalent, call `POST /agent-tools/billing/product-family-candidates`.
    - Include `targetAliases` there too, especially names from the dossier, portfolio, CRM product/offer names, known commercial aliases and normalized spelling variants.
-6. Inspect candidate evidence in this order:
+   - Pass strict `applicability` here too when the broad family still applies only to a CRM/SOC/DDD/date subset.
+7. Inspect candidate evidence in this order:
    1. `chargecode_description` exact or strong match.
    2. `bill_message_text` exact or strong match.
    3. `productcatalog_description`.
    4. `bundle_offer_caption` and composed line identity.
    5. Broad semantic description recall.
+
+## Strict Applicability First
+
+Use the most restrictive reliable key first:
+
+- Dossier with explicit CRM Product ID / ID CRM: candidates must have matching `crmProductcatalogIdIn`.
+- Dossier with SOC: candidates must have matching `billingOfferSocCodeIn`.
+- Dossier with contract/service agreement: candidates must have matching `serviceAgreementKeyIn`.
+- Locality rule: candidates must have matching `subscriberDddIn`.
+- Effective date rule: use `billingEffectiveDate` against invoice `effective_date`; use `serviceEffectiveDate` only when the condition is about service/contract validity.
+- Bundle/offer document: candidates must show the expected bundle via CRM/SOC/contract or a strong `bundleOfferCaption` signal.
+
+Only if the dossier lacks strict identifiers should the search fall back to bundle name, and only after that to generic product/family aliases.
 
 ## Standard Offer Label Components
 
@@ -29,7 +46,7 @@ For `Etiqueta padrao` / standard offer label documents, do not search invoice li
    - Servicos Digitais: named digital services listed in the offer.
    - Parceiro Spotify Premium: `Spotify`, `Spotify Premium`.
 3. Use `productcatalog_description` and `bundle_offer_caption` only to qualify whether the line is part of the same commercial bundle. Bundle caption alone is not enough to apply a monetary rule.
-4. Put the offer code in `externalConditions.bundleEligibility.bundleCrmIds` and keep the final predicate on the charge line candidates, such as `chargecodeKeyIn` plus optional `bundleOfferCaptionIn`.
+4. Put the offer code in `externalConditions.bundleEligibility.bundleCrmIds` and, when the invoice enrichment exposes it, in `applicability.assignedBillingOfferKeyIn`, `billingOfferSocCodeIn` or `bundleOfferCaptionIn`. Keep the final predicate on the charge line candidates, such as `chargecodeKeyIn` plus `predicate.applicability`.
 5. If the component can only be audited as a sum of multiple component lines, use `calculation.kind: "bundle_component_sum"` and make the grouping explicit. If the engine cannot support it yet, mark the rule as `needs_review`/`not_supported_yet`.
 
 ## Product Family Guardrail
