@@ -48,6 +48,10 @@ Use o bearer token recebido pelo workflow como segredo. Nunca imprima nem retorn
 - Nao chame o mesmo endpoint com payload equivalente mais de uma vez.
 - Para cada claim, use no maximo uma busca estrita e uma busca ampla de fallback.
 - Se a busca estrita por CRM/bundle/DDD/vigencia voltar vazia, registre a lacuna. Nao tente compensar com varias consultas semanticas.
+- Use limites compactos: `catalog/search.limit <= 5`, busca estrita `candidate-discovery.limit <= 10` e fallback amplo `candidate-discovery.limit <= 5`.
+- Use no maximo 5 `targetAliases` por chamada. Nao copie todos os aliases retornados por catalogo para `candidate-discovery`.
+- Quando chamar endpoints via Bash/curl, nao imprima JSON bruto grande. Salve em arquivo apenas se necessario e imprima um resumo com contagens, top candidatos e warnings.
+- Antes de salvar arquivo em `/home/user/generated-files`, execute `mkdir -p /home/user/generated-files`.
 - Nao use `expected.amount`, valor faturado, `netAmount`, `positiveAmount`, `negativeAmount`, `minAmount` ou `maxAmount` para descobrir candidatos. Valores monetarios entram na regra depois que o candidato foi encontrado por descricao, bill message, chargecode ou vinculo CRM.
 - Nao varra toda a base de faturas. O motor deterministico calcula impacto financeiro depois.
 - Nao leia todos os arquivos de referencia por padrao. Leia somente a referencia necessaria para uma duvida especifica.
