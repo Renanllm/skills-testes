@@ -52,7 +52,9 @@ Use o bearer token recebido pelo workflow como segredo. Nunca imprima nem retorn
 - Use no maximo 5 `targetAliases` por chamada. Nao copie todos os aliases retornados por catalogo para `candidate-discovery`.
 - Quando chamar endpoints via Bash/curl, nao imprima JSON bruto grande. Salve em arquivo apenas se necessario e imprima um resumo com contagens, top candidatos e warnings.
 - Antes de salvar arquivo em `/home/user/generated-files`, execute `mkdir -p /home/user/generated-files`.
-- Nao abra `references/*.md` no caminho feliz. Use os payloads minimos abaixo. Leia uma referencia somente se um endpoint retornar erro de schema/contrato que bloqueie a execucao.
+- Nao abra `references/*.md` no caminho feliz. Use os payloads minimos abaixo. Se houver erro de schema, corrija usando a mensagem de erro do endpoint; nao procure arquivo de referencia.
+- Nao imprima candidato completo (`candidateSets[0]`, objeto inteiro de resposta ou JSON bruto). Resuma com contagens e ate 3 itens `{candidateSetId, chargecodeDescription, matchedAliases, recommendedDecision, confidence}`.
+- Orcamento alvo: ate 12 invocacoes Bash por run, incluindo contrato, catalogo, candidato estrito, fallback amplo, CRM, contexto, validacoes e escrita do resultado.
 - Nao use `expected.amount`, valor faturado, `netAmount`, `positiveAmount`, `negativeAmount`, `minAmount` ou `maxAmount` para descobrir candidatos. Valores monetarios entram na regra depois que o candidato foi encontrado por descricao, bill message, chargecode ou vinculo CRM.
 - Nao varra toda a base de faturas. O motor deterministico calcula impacto financeiro depois.
 - Nao leia todos os arquivos de referencia por padrao. Leia somente a referencia necessaria para uma duvida especifica.
@@ -63,11 +65,11 @@ Use estes formatos sem consultar referencias quando bastarem:
 
 - Contrato: `GET /agent-tools/rule-dsl/contract | jq '{version, officialAmountField}'`.
 - Catalogo: `POST /agent-tools/catalog/search` com `{"query":"Spotify","entityKinds":["product","variant","bundle","plan","offer"],"limit":5}`.
-- Candidato estrito: `POST /agent-tools/billing/candidate-discovery` com `targetName`, ate 5 `targetAliases`, `entityKinds`, `identifiers`, `strategy:"high_recall"`, `applicability`, `eligibilityFilters`, `selectionPolicy:{scopeKind,candidateSearchOrder,strictCandidateEligibility:true}` e `limit:10`.
+- Candidato estrito: `POST /agent-tools/billing/candidate-discovery` com `targetName`, ate 5 `targetAliases`, `entityKinds`, `identifiers` como array de strings, nunca objeto (ex.: `["0055013624","0055013625"]`), `strategy:"high_recall"`, `applicability`, `eligibilityFilters`, `selectionPolicy:{scopeKind,candidateSearchOrder,strictCandidateEligibility:true}` e `limit:10`.
 - Fallback amplo: mesmo endpoint, sem filtros estritos, `strictCandidateEligibility:false` e `limit:5`; use somente para registrar mapping possivel, nao para `executable`.
 - CRM: `POST /agent-tools/crm/contracts/search` com IDs declarados (`crmProductIds`, `crmOfferIds`, `bundleCrmIds`, SOC, contrato, DDD, status, `activeOn`) e `limit:20`.
 - Contexto: `POST /agent-tools/rules/context` com `targetName`, aliases, `chargecodeKeys`, IDs CRM/SOC/contrato/bundle/DDD, `applicability`, vigencia e relacao proposta quando existir.
-- Validacao: `POST /agent-tools/rules/validate` com o `ruleDraft` final.
+- Validacao: `POST /agent-tools/rules/validate` com o `ruleDraft` final; `target` deve ser objeto com `entityName`, nao string.
 
 ## Aplicabilidade Estrita
 
