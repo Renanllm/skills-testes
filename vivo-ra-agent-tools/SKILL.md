@@ -55,6 +55,7 @@ Use o bearer token recebido pelo workflow como segredo. Nunca imprima nem retorn
 - Nao abra `references/*.md` no caminho feliz. Use os payloads minimos abaixo. Se houver erro de schema, corrija usando a mensagem de erro do endpoint; nao procure arquivo de referencia.
 - Nao imprima candidato completo (`candidateSets[0]`, objeto inteiro de resposta ou JSON bruto). Resuma com contagens e ate 3 itens `{candidateSetId, chargecodeDescription, matchedAliases, recommendedDecision, confidence}`.
 - Orcamento alvo: ate 12 invocacoes Bash por run, incluindo contrato, catalogo, candidato estrito, fallback amplo, CRM, contexto, validacoes e escrita do resultado.
+- Para dossies com varias variantes do mesmo produto (ex.: Individual/Familia), agrupe todos os IDs CRM em uma unica busca estrita; separe as variantes apenas nos `ruleDrafts`.
 - Nao use `expected.amount`, valor faturado, `netAmount`, `positiveAmount`, `negativeAmount`, `minAmount` ou `maxAmount` para descobrir candidatos. Valores monetarios entram na regra depois que o candidato foi encontrado por descricao, bill message, chargecode ou vinculo CRM.
 - Nao varra toda a base de faturas. O motor deterministico calcula impacto financeiro depois.
 - Nao leia todos os arquivos de referencia por padrao. Leia somente a referencia necessaria para uma duvida especifica.
@@ -70,6 +71,8 @@ Use estes formatos sem consultar referencias quando bastarem:
 - CRM: `POST /agent-tools/crm/contracts/search` com IDs declarados (`crmProductIds`, `crmOfferIds`, `bundleCrmIds`, SOC, contrato, DDD, status, `activeOn`) e `limit:20`.
 - Contexto: `POST /agent-tools/rules/context` com `targetName`, aliases, `chargecodeKeys`, IDs CRM/SOC/contrato/bundle/DDD, `applicability`, vigencia e relacao proposta quando existir.
 - Validacao: `POST /agent-tools/rules/validate` com o `ruleDraft` final; `target` deve ser objeto com `entityName`, nao string.
+- Enums da DSL: `ruleType` usa `fixed_price`, `free_period`, etc.; `calculation.kind` usa `fixed_amount`, `no_charge`, etc.; `selectionPolicy.scopeKind` usa `crm_product_specific`, `bundle_specific`, `bundle_component`, `locality_specific`, `product_family` ou `billing_only`.
+- `ruleDraft` confrontavel precisa de `ruleName`, `ruleType`, `ruleSituation`, `target`, `calculation`, `predicate`, `applicability`, `selectionPolicy` e `evidence`.
 
 ## Aplicabilidade Estrita
 
