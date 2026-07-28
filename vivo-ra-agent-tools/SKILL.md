@@ -1,15 +1,15 @@
 ---
 name: vivo-ra-agent-tools
-description: Use quando um agente do Tela precisar ler PDFs de dossies Vivo RA, consultar a API de catalogo/faturamento, extrair regras monetarias ou confrontaveis, descobrir candidatos de billing, qualificar predicados finais, validar conflitos e retornar um pacote JSON auditavel.
+description: Use quando um agente do Tela precisar criar rascunhos auditaveis de regras financeiras Vivo RA usando agent tools, DSL v0.6, CRM oficial enriquecido, aplicabilidade estrita, bundle, DDD, vigencia e hierarquia de regras.
 ---
 
 # Vivo RA Agent Tools
 
-Use esta skill para transformar um dossie Vivo RA em rascunhos auditaveis de regras financeiras. O agente pode inferir alvos comerciais a partir do dossie, mas deve usar a API de tools para resolver candidatos e validar predicados executaveis.
+Use esta skill para transformar a triagem de um dossie Vivo RA em um pacote JSON auditavel de regras financeiras. O preco, desconto, gratuidade, tarifa, ausencia/presenca monetaria ou formula sempre nasce do dossie. Billing, CRM e catalogo servem para descobrir onde auditar e quando aplicar a regra.
 
-Idioma obrigatorio: escreva todo texto livre em portugues brasileiro. Preserve em ingles somente chaves JSON, nomes de endpoints, nomes de campos tecnicos, valores de enum, charge codes, productcatalog keys e bundle captions.
+Idioma obrigatorio: escreva todo texto livre em portugues brasileiro. Preserve em ingles somente chaves JSON, endpoints, enums, charge codes, productcatalog keys, SOC, bundle captions e nomes tecnicos.
 
-Base URL padrao das tools:
+Base URL padrao:
 
 ```txt
 https://server-production-4285.up.railway.app
@@ -17,91 +17,121 @@ https://server-production-4285.up.railway.app
 
 Use o bearer token recebido pelo workflow como segredo. Nunca imprima nem retorne o token.
 
-## Referencias Obrigatorias
+## Contrato Curto
 
-Leia estes arquivos antes de produzir a resposta final:
+- API esperada: `ruleDslContract.version: "v0.6"`.
+- Campo monetario oficial da POC: `c.chargetotalamount`.
+- Situacoes permitidas de regra: `executable`, `needs_review`, `not_applicable`.
+- Uma declaracao monetaria sem regra deve voltar como `claim_disposition: "not_created"`, com `not_created_reason_code` e `not_created_reason`.
+- Dossie sem aprovacao clara deve preencher `dossie.invalid_reason_code: "missing_clear_approval"` e `dossie.invalid_reason`.
+- Regra valida precisa ter aprovacao clara e impacto financeiro direto auditavel: reprecificacao, desconto, gratuidade, tarifa, ausencia/presenca monetaria ou formula.
+- Nao crie regra para inclusao operacional de servico sem cobranca, comunicacao, rollout, PRM/CRM sem efeito financeiro, ou item que nao consiga ser auditado em fatura.
 
-- `references/endpoint-contracts.md`: endpoints HTTP disponiveis, payloads, campos de resposta e autenticacao.
-- `references/rule-dsl.md`: formato canonico da regra, confrontabilidade, campo monetario, status e confianca.
-- `references/candidate-discovery-playbook.md`: como buscar candidatos amplamente sem aprovar falso mapping.
-- `references/candidate-qualification-playbook.md`: como incluir, excluir ou deixar candidatos pendentes e produzir predicados finais.
-- `references/output-contract.md`: envelope JSON final.
+## Fluxo Recomendado
 
-Leia `references/non-confrontable-items.md` quando o dossie trouxer instrucoes operacionais, CRM, PRM, migracao, comunicacao, ativacao ou desativacao. Leia `references/examples-vivo-recado.md` apenas quando precisar de um exemplo concreto de preenchimento.
+1. Use a triagem previa do workflow como fonte principal de claims. Nao releia o PDF inteiro no caminho feliz.
+2. Chame `GET /agent-tools/rule-dsl/contract`. Se nao for `v0.6`, retorne `status: "blocked"` com `contract_mismatch`.
+3. Enumere as declaracoes monetarias do dossie e atribua `source_claim_id` estavel: `claim-001`, `claim-002`, etc.
+4. Para cada claim, pesquise catalogo com `POST /agent-tools/catalog/search` usando nomes/IDs declarados.
+5. Descubra candidatos com `POST /agent-tools/billing/candidate-discovery`.
+6. Se houver ID CRM, SOC, contrato, bundle, DDD ou vigencia no dossie, envie `applicability`, `eligibilityFilters` e `selectionPolicy.strictCandidateEligibility: true`.
+7. Se a busca estrita retornar zero candidatos, faca no maximo uma busca ampla sem filtros estritos para registrar mapping possivel. Nao inclua candidato amplo como executavel sem cobertura estrita; retorne `needs_mapping` ou `needs_crm` com a lacuna explicita.
+8. Para reprecificacao/familia/plano/gratuidade ampla, use `POST /agent-tools/billing/product-family-candidates` uma vez, com os mesmos filtros de aplicabilidade quando existirem.
+9. Para candidato ambiguo, use `candidate-clusters` ou `sample-lines` somente quando isso mudar include/exclude/pending.
+10. Consulte `POST /agent-tools/crm/contracts/search` quando a regra depender de produto/oferta CRM, SOC, `serviceAgreementKey`, bundle CRM, DDD, ativacao ou vigencia de contrato.
+11. Antes de fechar hierarquia, use `POST /agent-tools/rules/context`: primeiro por ID CRM/SOC/contrato, depois por bundle especifico, por ultimo por produto/familia.
+12. Valide cada `ruleDraft` com `POST /agent-tools/rules/validate`.
+13. Use `rules/conflicts`, `rules/applicability-preview` e `audit/preview` apenas quando houver ambiguidade real que nao foi resolvida por `rules/context` e `rules/validate`.
 
-## Fluxo Obrigatorio
+## Disciplina Anti-Loop
 
-1. Leia o dossie multimodalmente. Prefira a leitura visual/OCR direta quando o workflow fornecer o PDF.
-2. Identifique toda declaracao do dossie que possa afetar valor de fatura. Mapeie declaracoes monetarias nao suportadas com `support.confrontabilityStatus`; mantenha itens puramente operacionais separados.
-3. Chame `GET /agent-tools/rule-dsl/contract`.
-4. Se o contrato retornado nao for compativel com `v0.6`, pare e retorne `status: "blocked"` com `contract_mismatch` no resumo da tool. Nao tente adaptar uma regra nova para contrato antigo.
-4.1. Se o documento for uma `Etiqueta padrao` ou `standard offer label`, trate-o como documento de oferta conjunta: `Codigo da oferta` e um `bundleCrmId`, `Prazo de vigencia` vira a janela da regra, `Abrangencia` vira contexto/regiao, e cada item monetario em `Precos individuais dos servicos da oferta conjunta` pode gerar uma regra de componente de bundle quando houver linha de fatura auditavel.
-5. Para cada regra monetaria ou confrontavel, chame `POST /agent-tools/catalog/search` usando o alvo comercial e tipos provaveis de entidade.
-6. Crie um rascunho de regra com alvo, comportamento esperado, evidencias, datas, condicoes CRM/bundle, aprovacao binaria e incertezas. IDs CRM sao opcionais, mas todo ID explicitamente declarado no dossie deve ser preservado no JSON estruturado, mesmo quando o CRM oficial nao confirmar contrato.
-6.1. Quando o dossie trouxer ID CRM, SOC, `serviceAgreementKey`, bundle/oferta, DDD/localidade ou vigencia, preencha `applicability` e `selectionPolicy` no `rule_draft_json`. Esses campos limitam quais linhas de fatura podem entrar na auditoria.
-7. Chame `POST /agent-tools/billing/candidate-discovery` com `strategy: "high_recall"`. Se existir aplicabilidade estrita, envie `applicability`, `eligibilityFilters` e `selectionPolicy.strictCandidateEligibility: true`; candidatos sem linha coberta por esses filtros devem ser excluidos ou ficar como `pending`, nunca incluidos.
-8. Quando a regra afetar uma familia/plano de produto, reprecificacao, gratuidade ampla, ou quando o dossie disser "todos os canais", "todos os IDs", "todos os fluxos" ou equivalente, chame `POST /agent-tools/billing/product-family-candidates` antes de fechar o predicado final. Passe a mesma `applicability` para nao ampliar candidatos alem do escopo CRM/DDD/vigencia.
-9. Escolha candidatos usando primeiro `chargecode_description` e `bill_message_text`; depois use `productcatalog_description`, papel da linha, contexto de bundle e chargecode inferido para qualificar. Nao use preco esperado, valor faturado ou janelas de valor como criterio de descoberta.
-10. Para candidatos amplos ou ambiguos, chame `POST /agent-tools/billing/candidate-clusters` e `POST /agent-tools/invoices/sample-lines`.
-11. Use `POST /agent-tools/billing/line-identity-search` ou `POST /agent-tools/billing/identifier-search` quando precisar entender relacoes entre produto, bundle, descricao ou charge code.
-12. Produza `candidateQualification` com candidatos incluidos, excluidos e pendentes. Para cada candidato retornado, preserve `billingContext` com charge codes, chargecode descriptions, bill message texts, productcatalog keys, productcatalog descriptions, bundle captions, amostras, sinais, papel da linha, origem do match e tools de origem.
-13. Chame `POST /agent-tools/billing/qualification-validate` com o predicado final proposto.
-14. Quando a regra depender de elegibilidade por cliente, produto/oferta CRM, bundle CRM, vigencia de contrato, praca/regiao, ativacao, gratuidade por tempo desde contratacao, ou quando houver candidatos concorrentes que precisem de contexto de cliente para desambiguar, chame `POST /agent-tools/crm/contracts/search`. Use esses dados como contexto externo disponivel; se o CRM oficial nao tiver dados suficientes, preencha `required_crm_checks` e mantenha a ressalva.
-15. Chame `POST /agent-tools/rules/context` para fechar `ruleRelationship`. A primeira busca deve ser por ID CRM/SOC/contrato quando houver; se nao houver, busque pelo bundle/oferta especifico; so em ultimo caso busque por produto/familia. Use `targetName`, `targetAliases`, `chargecodeKeys`, IDs CRM, SOCs, `serviceAgreementKeys`, DDD, bundles e vigencia conhecidos; se tiver uma relacao proposta, envie `proposedRelationship` para validar ciclos. Depois chame `POST /agent-tools/rules/validate` e, quando precisar de detalhe adicional de predicado, `POST /agent-tools/rules/conflicts`. Use as respostas para preencher `ruleSet`, `ruleRelationship`, `stacking` e perguntas abertas quando a prioridade ainda depender de revisao humana.
-16. Quando houver concorrencia de regras, CRM, bundle, praca/regiao, vigencia de contrato ou elegibilidade pendente, chame `POST /agent-tools/rules/applicability-preview` para validar quais linhas/unidades ficariam `eligible`, `unknown`, `needs_crm` ou `needs_bundle_eligibility`.
-17. Opcionalmente chame `POST /agent-tools/audit/preview` apenas para uma pequena amostra. Nao calcule impacto final em toda a base.
-18. Retorne o JSON descrito em `references/output-contract.md`.
+- Nao chame o mesmo endpoint com payload equivalente mais de uma vez.
+- Para cada claim, use no maximo uma busca estrita e uma busca ampla de fallback.
+- Se a busca estrita por CRM/bundle/DDD/vigencia voltar vazia, registre a lacuna. Nao tente compensar com varias consultas semanticas.
+- Nao use `expected.amount`, valor faturado, `netAmount`, `positiveAmount`, `negativeAmount`, `minAmount` ou `maxAmount` para descobrir candidatos. Valores monetarios entram na regra depois que o candidato foi encontrado por descricao, bill message, chargecode ou vinculo CRM.
+- Nao varra toda a base de faturas. O motor deterministico calcula impacto financeiro depois.
+- Nao leia todos os arquivos de referencia por padrao. Leia somente a referencia necessaria para uma duvida especifica.
 
-## Regras Duras
+## Aplicabilidade Estrita
 
-- Regra nasce exclusivamente de uma declaracao monetaria, precificacao, desconto, gratuidade, tarifa, presenca/ausencia monetaria ou condicao financeira explicitamente presente no dossie. Candidato de billing, chargecode, product description ou bundle encontrado nas tools nunca cria uma regra nova sozinho.
-- Em Etiqueta padrao/oferta conjunta, as declaracoes monetarias de `Precos individuais dos servicos da oferta conjunta` podem criar regras separadas por componente, por exemplo Telecom, Servicos Digitais e Parceiro. Use `target.entityKind: "bundle_component"` e `documentType: "standard_offer_label"`.
-- Em Etiqueta padrao, o `Codigo da oferta` deve ser preservado como `bundleCrmId` e `bundleCrmIdsFromDossier` em `externalConditions.bundleEligibility` e tambem em `externalConditions.crm.bundleCrmIds` quando ele qualificar a aplicacao por cliente. Esse codigo normalmente nao aparece nas faturas; ele deve ser confirmado pelo CRM oficial.
-- Para componentes de oferta conjunta, encontre as linhas candidatas pelo nome do componente/produto em `chargecode_description` e `bill_message_text`, depois use `productcatalog_description` e `bundle_offer_caption` como contexto. Exemplo generico: um componente Telecom de bundle pode estar em uma linha de plano completo, nao em uma linha com o codigo da oferta.
-- Antes de criar `regras_financeiras`, enumere mentalmente as declaracoes monetarias do dossie. Cada regra financeira deve corresponder a uma dessas declaracoes e preencher `source_claim_id` com um identificador estavel dessa declaracao, por exemplo `claim-001`.
-- Crie uma regra separada apenas quando mudar o comportamento economico: valor esperado, formula de calculo, vigencia, condicao de elegibilidade, prioridade/stacking ou alvo comercial explicitamente declarado no dossie. Nao separe regra apenas porque encontrou outro candidato, bundle, caption ou chargecode.
-- Se um candidato parecer produto/variante/bundle relacionado, mas o dossie nao declarar valor, formula ou condicao financeira propria para ele, mantenha-o como `pending` ou `exclude` em `candidate_sets_resumo`, ou como `itens_mapeados_nao_suportados` vinculado ao claim original. Nao promova esse candidato para `regras_financeiras`.
-- Itens em `itens_mapeados_nao_suportados` sao lacunas/politicas extraidas para rastreabilidade. Eles devem ter `source_claim_id` quando derivarem de uma declaracao monetaria, mas nao representam regra auditavel nem predicado final.
-- Se uma declaracao nao virar regra financeira, preencha `claim_disposition: "not_created"`, `not_created_reason_code` e `not_created_reason` no item correspondente. Motivos comuns: `missing_clear_approval`, `no_direct_financial_impact`, `not_invoice_auditable`, `needs_external_data_not_available`, `purely_operational` ou `duplicate_of_existing_rule`.
-- Se o dossie inteiro nao tiver aprovacao clara para aplicacao, preencha `dossie.invalid_reason_code: "missing_clear_approval"` e `dossie.invalid_reason`. Regra aprovada por inferencia ou por candidato de billing nao existe.
-- Nao varra todas as linhas de fatura. Use candidate discovery, clusters, amostras e validadores.
-- Nao calcule impacto financeiro final em toda a base de faturas. O motor deterministico faz isso depois.
-- Nao invente aprovacao. Extraia `approval_status: "approved" | "not_approved"` do proprio dossie: use `approved` somente quando houver GO/aprovacao/decisao de seguir explicitamente aplicavel a regra; use `not_approved` quando houver NOGO, cancelamento, decisao de nao seguir, "sem atuacao", "nao aprovado", "nao iniciado", item ainda em discussao ou ausencia de aprovacao explicita. Excecao da POC: documentos oficiais de `Etiqueta padrao`/oferta conjunta devem ser tratados como `approved` porque representam uma oferta comercial publicada, salvo se o proprio documento trouxer NOGO, cancelamento, bloqueio ou indicacao explicita de nao seguir.
-- Nao classifique como NOGO apenas porque apareceu a frase operacional "Emitir GO / NO GO da etapa". Essa frase e o nome da tarefa. A decisao real vem da coluna/status da aprovacao da fase, do status do projeto ou de uma declaracao textual de NOGO/cancelamento/impeditiva.
-- Toda regra financeira e todo item monetario mapeado deve carregar `approval_status` e `approval_evidence`. Se a aprovacao estiver no nivel do dossie inteiro, replique a decisao em cada regra derivada daquele dossie e explique a evidencia.
-- Regra `not_approved` pode ser mapeada para rastreabilidade, mas nao deve gerar predicado final ativo nem impacto financeiro. Use `ruleSituation: "needs_review"` ou `not_applicable` conforme o caso, e explique em `support.unsupportedReasons`/`situationRationale`.
-- Nao transforme instrucoes puramente operacionais em regras deterministicas de faturamento. Retorne-as como nao confrontaveis ou itens mapeados nao suportados quando forem uteis para rastreabilidade.
-- Nao use descricao ampla, nome do produto ou nome do bundle como unico predicado final de regra monetaria de linha.
-- Para regras monetarias de linha de fatura, resolva o predicado final para `chargecodeKeyIn` sempre que possivel. Se isso nao for possivel, marque `needs_mapping` ou `needs_agent_qualification`.
-- Se a regra se aplica a um bundle, identifique quais linhas de cobranca sao afetadas. Alvo bundle nao significa automaticamente todas as linhas do bundle.
-- Nao exclua um candidato apenas por aparecer dentro de um bundle/caption. Se `productcatalog_description` representar diretamente o produto/plano afetado, trate o bundle como contexto e inclua o candidato quando o dossie tiver escopo amplo.
-- Classifique o papel da linha antes da decisao final: `direct_product_charge` entra no predicado; `chargecode_description_match` e `sva_ambiguous` precisam ser qualificados pelo agente; `discount`, `different_variant`, `plan_with_benefit` e `context_only` nao entram sem justificativa explicita.
-- Se candidatos forem amplos demais, mantenha-os nos candidate sets, mas exclua ou marque como pendente na qualificacao.
-- Nao retorne candidato ponderado sem `billingContext` estruturado. A decisao do agente precisa carregar o contexto de fatura usado para include, exclude ou pending.
-- Para toda regra financeira, preencha `chargecode_candidates_json`, `disambiguation_json`, `stacking_json` e `required_crm_checks` quando houver candidatos ou dados externos faltantes. Se nao houver concorrencia ou checks externos, use arrays vazios e explique `not_applicable`.
-- Dados retornados por `POST /agent-tools/crm/contracts/search` nao criam uma regra nova sozinhos. Eles servem para qualificar elegibilidade, vigencia, CRM product/offer IDs, bundle CRM, praca/regiao e ambiguidades entre candidatos de billing.
-- CRM, bundle CRM e elegibilidade de bundle nao criam preco. Eles dizem quando a regra se aplica, como desambiguar candidatos e quais checks externos faltam. O preco/formula/beneficio sempre deve vir de uma declaracao monetaria do dossie.
-- A nova base de faturas contem vinculos CRM/contrato oficiais por linha bruta. Use `applicability.crmProductcatalogIdIn`, `billingOfferSocCodeIn`, `serviceAgreementKeyIn`, `assignedBillingOfferKeyIn`, `subscriberDddIn`, `subscriberStatusKeyIn`, `billingOfferStatusIn`, `bundleOfferCaptionIn`, `billingEffectiveDate` e `serviceEffectiveDate` para restringir aplicacao deterministica. Espelhe o mesmo bloco em `predicate.applicability` quando a regra final for de linha.
-- Regras com ID CRM esperado so podem incluir candidatos com cobertura nas linhas que tenham esse ID CRM. Regras de bundle/pacote so podem incluir candidatos com evidencia de pertencer ao bundle esperado. Regras de componente separado do bundle, como servico digital dentro de plano, exigem evidencia direta do produto cobrado e evidencia de pertencimento ao bundle, por exemplo `bundleOfferCaption`, SOC, contrato ou link CRM.
-- Regras de localidade usam `subscriberDddIn`. Nao converta DDD para UF/cidade sem evidencia no dossie. Regras com vigencia usam `billingEffectiveDate` baseado em `invoice_lines.effective_date`; use `serviceEffectiveDate` quando a condicao falar de vigencia do contrato/servico.
-- IDs CRM sao opcionais. Nunca invente `crmProductIds`, `crmOfferIds` ou `bundleCrmIds`. Quando o dossie ou o CRM oficial nao trouxer IDs, use arrays vazios em `externalConditions.crm`, registre `required_crm_checks` e explique a lacuna em `disambiguation`.
-- Preserve IDs declarados no dossie separadamente de IDs confirmados no CRM oficial. Se o dossie trouxer `Product ID`, `ID Produto`, `ID CRM Produto` ou equivalente, preencha `externalConditions.crm.crmProductIds` e `crmProductIdsFromDossier`. Se trouxer `Offer ID`, `ID Oferta`, `Oferta ID` ou equivalente, preencha `crmOfferIds` e `crmOfferIdsFromDossier`. Se trouxer `Bundle ID`, `ID Bundle`, `ID oferta bundle` ou equivalente, preencha `bundleCrmIds` e `bundleCrmIdsFromDossier`. Se trouxer `Service ID`, preencha `serviceIdsFromDossier` e tambem `declaredCrmIds` com `idType: "service_id"`.
-- Quando o dossie trouxer apenas `ID` generico em "Detalhes da Oferta", "Oferta", "Service Name" ou bloco equivalente, nao escolha somente um tipo e descarte os outros. Preserve esse ID em `declaredCrmIds` com `idType: "unknown_crm_id"` ou com o melhor tipo inferido, e tambem espelhe em `crmProductIdsFromDossier` e `crmOfferIdsFromDossier` quando ele puder representar produto/oferta na POC. Explique a ambiguidade em `rationale`.
-- A ausencia do ID no CRM oficial nunca apaga um ID declarado no dossie. Nesse caso mantenha o ID em `*FromDossier`, deixe o respectivo `*ConfirmedInMock` vazio, e use `declaredCrmIds[].verificationStatus: "declared_unverified"` ou `"not_found_in_crm_mock"`.
-- Para cada ID declarado relevante, adicione um item em `externalConditions.crm.declaredCrmIds` com `id`, `idType`, `source: "dossier"`, `verificationStatus`, e evidencia curta (`source`, `page` quando souber, `quote`). Se o rotulo for apenas `ID` e o contexto nao provar produto/oferta/bundle, use `idType: "unknown_crm_id"` e explique a ambiguidade em `rationale`, mas nao descarte o ID.
-- Para gratuidade ou desconto relativo a contratacao/ativacao, preencha `eligibilityWindow` dentro de `rule_draft_json` e, quando conveniente para persistencia, tambem `eligibility_window_json`. Use `anchor: "crm.activation_date"`, `activationDatePolicy: "relative_to_activation"`, duracao em dias/meses, campo de data da fatura usado e `requiredChecks: ["activation_date"]`.
-- Para regras ligadas a bundle/oferta bundle, modele o bundle em `externalConditions.bundleEligibility` e/ou `externalConditions.crm.bundleCrmIds`; mantenha o predicado final nas linhas de cobranca afetadas. Se a elegibilidade do bundle nao puder ser comprovada, use `needs_bundle_eligibility`.
-- Nao use `expected.amount`, preco alvo, valor faturado, `netAmount` ou janelas de valor para selecionar candidatos. Esses valores entram na logica de regra/auditoria depois que as linhas candidatas forem encontradas por descricao/chargecode.
-- Trate `c.chargetotalamount` como campo monetario oficial da POC.
-- Use apenas `ruleSituation: "executable" | "needs_review" | "not_applicable"` como situacao principal da regra. Nao invente status livres. Coloque motivos tecnicos em `dependencyCodes`, `support.unsupportedReasons`, `disambiguation` e `required_crm_checks`.
-- Preserve `support.confrontabilityStatus` apenas como detalhe tecnico de compatibilidade. A UI e a esteira devem usar `ruleSituation` como situacao principal.
-- Para toda regra financeira, preencha `ruleSet` e `ruleRelationship`. Quando nao souber a prioridade dentro do conjunto, use `relationshipType: "requires_manual_review"` e explique o motivo.
-- Em `ruleRelationship.priorityRank`, numeros menores significam maior precedencia. Ordene por especificidade operacional: ID CRM/SOC/contrato + DDD + janela de data vem antes de ID CRM/SOC/contrato; ID CRM/SOC/contrato vem antes de bundle especifico; bundle especifico vem antes de produto/familia; produto/familia vem antes de regra somente por chargecode/billing. Use essa ordem mesmo quando a regra mais especifica tiver o mesmo preco esperado de uma regra mais generica.
-- O criterio `highest_expected_amount_for_underbilling` e fallback somente para recuperacao/underbilling quando ha concorrencia de regras no mesmo contexto e o CRM/taxonomia ainda nao desambigua. Nao use esse criterio para credito ao cliente, cobranca a maior, nem como precedencia universal.
-- Quando a regra depender de elegibilidade de bundle, preencha `externalConditions.bundleEligibility` e adicione `needs_bundle_eligibility` em `dependencyCodes` se a fatura/CRM oficial nao conseguir confirmar a elegibilidade.
-- Quando o dossie trouxer data de vigencia, toda regra monetaria confrontavel deve carregar `effectiveFrom` e `effectiveTo` dentro de `rule_draft_json`, e `valid_from` e `valid_to` no envelope final. Use `null` para data fim ausente.
-- Apenas regras com `support.confrontabilityStatus: "confrontable_deterministic"` podem gerar impacto financeiro. Lacunas de CRM, evento de assinatura, entitlement, mapping, quantidade de uso e preco de referencia devem ser explicitas.
+Use estes campos quando existirem no dossie ou forem necessarios para separar regras concorrentes:
 
-## Disciplina de Saida
+- `applicability.crmProductcatalogIdIn`
+- `applicability.billingOfferSocCodeIn`
+- `applicability.serviceAgreementKeyIn`
+- `applicability.assignedBillingOfferKeyIn`
+- `applicability.subscriberDddIn`
+- `applicability.subscriberStatusKeyIn`
+- `applicability.billingOfferStatusIn`
+- `applicability.bundleOfferCaptionIn`
+- `applicability.billingEffectiveDate`
+- `applicability.serviceEffectiveDate`
+- `applicability.requireAll: true` quando todas as condicoes forem obrigatorias.
 
-Retorne um unico objeto JSON. Inclua resumo das chamadas de tool, evidencias do dossie, raciocinio dos candidatos, respostas de validacao, conflitos e perguntas abertas. Se as tools estiverem indisponiveis, retorne `status: "blocked"` com os nomes das tools que falharam e sem inventar mappings.
+Espelhe o bloco em `predicate.applicability`, `applicability_json`, `selection_policy_json` e `rule_draft_json.selectionPolicy` quando a regra final depender desses filtros.
+
+Regras com ID CRM esperado so podem incluir candidatos com cobertura nas linhas que tenham esse ID CRM. Regras de bundle/pacote so podem incluir candidatos com evidencia do bundle esperado. Regras de componente separado de bundle exigem evidencia direta do produto cobrado e evidencia de pertencimento ao bundle por `bundleOfferCaption`, SOC, contrato ou link CRM.
+
+## IDs CRM
+
+IDs CRM sao opcionais; nunca invente `crmProductIds`, `crmOfferIds` ou `bundleCrmIds`.
+
+Preserve IDs declarados no dossie separadamente de IDs confirmados:
+
+- `Product ID`, `ID Produto`, `ID CRM Produto`: `crmProductIds` e `crmProductIdsFromDossier`.
+- `Offer ID`, `ID Oferta`, `Oferta ID`: `crmOfferIds` e `crmOfferIdsFromDossier`.
+- `Bundle ID`, `ID Bundle`, `Codigo da oferta`: `bundleCrmIds` e `bundleCrmIdsFromDossier`.
+- `Service ID`: `serviceIdsFromDossier`.
+- ID generico: `declaredCrmIds[].idType: "unknown_crm_id"` e explique a ambiguidade.
+
+Se o CRM oficial nao confirmar o ID, mantenha o ID em `*FromDossier`, deixe confirmacoes vazias e use `declaredCrmIds[].verificationStatus: "declared_unverified"` ou `"not_found_in_crm"`.
+
+## Hierarquia
+
+Numeros menores em `ruleRelationship.priorityRank` significam maior precedencia.
+
+Ordem de especificidade:
+
+1. ID CRM/SOC/contrato + DDD + janela de data.
+2. ID CRM/SOC/contrato.
+3. Bundle especifico.
+4. Produto/familia.
+5. Regra somente por chargecode/billing.
+
+Use `highest_expected_amount_for_underbilling` somente como fallback para recuperacao/underbilling quando ha concorrencia no mesmo contexto e CRM/taxonomia nao desambigua. Nao use para credito ao cliente nem como precedencia universal.
+
+## Gratuidade e Janelas
+
+Para gratuidade ou desconto relativo a contratacao/ativacao:
+
+- `ruleType: "free_period"` quando for periodo gratuito.
+- `externalConditions.crm.activationDatePolicy: "relative_to_activation"`.
+- `eligibilityWindow.anchor: "crm.activation_date"`.
+- duracao em dias ou meses.
+- `requiredChecks: ["activation_date"]`.
+
+Se a data de ativacao/contratacao nao estiver disponivel, retorne `needs_crm` ou `needs_subscription_event`; nao marque como executavel.
+
+## Etiqueta Padrao
+
+Para `Etiqueta padrao` ou oferta conjunta:
+
+- use `documentType: "standard_offer_label"`;
+- trate `Codigo da oferta` como `bundleCrmId`;
+- preserve em `externalConditions.bundleEligibility.bundleCrmIds`, `externalConditions.crm.bundleCrmIds`, `bundleCrmIdsFromDossier` e `declaredCrmIds`;
+- crie regras por componente auditavel quando `Precos individuais dos servicos da oferta conjunta` trouxer valor financeiro;
+- busque candidatos pelo nome do componente em `chargecode_description` e `bill_message_text`; use `productcatalog_description` e `bundle_offer_caption` apenas para qualificar.
+
+Na POC, documento oficial de etiqueta padrao pode ser `approved` salvo se houver NOGO, cancelamento, bloqueio, nao aprovado, sem atuacao ou ainda em discussao explicitamente no documento.
+
+## Referencias Sob Demanda
+
+Leia somente quando precisar:
+
+- `references/endpoint-contracts.md`: payload/resposta de endpoint especifico.
+- `references/rule-dsl.md`: detalhe da DSL v0.6.
+- `references/candidate-discovery-playbook.md`: duvida de descoberta de candidatos.
+- `references/candidate-qualification-playbook.md`: duvida de include/exclude/pending.
+- `references/output-contract.md`: apenas se o schema estruturado do workflow nao bastar.
+- `references/non-confrontable-items.md`: itens operacionais, CRM, PRM, migracao ou comunicacao.
+- `references/examples-vivo-recado.md`: exemplo concreto.
